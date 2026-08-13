@@ -1,0 +1,22 @@
+#!/bin/bash
+
+while true; do
+	DATETIME=$(date +"%d %a %H:%M:%S")
+	WIFI=$(nmcli dev show wlp8s0 | grep 'GENERAL.CONNECTION' | sed -e "s/^GENERAL.CONNECTION:[ \t]*/󰖩 /" -e "s/^󰖩 --/󰤮 Not connected/")
+	CAP=$(cat /sys/class/power_supply/BAT0/capacity)
+	if [[ ((CAP -gt 74)) ]]; then
+		CAP_ICON=' '
+	elif [[ ((CAP -gt 49)) ]]; then
+		CAP_ICON=' '
+	elif [[ ((CAP -gt 24)) ]]; then
+		CAP_ICON=' '
+	elif [[ ((CAP -gt 10)) ]]; then
+		CAP_ICON=' '
+	elif true; then 
+		CAP_ICON=' '
+	fi;
+	if [[ -n $BAR ]]; then sleep 1s; fi;
+	BAR=" $WIFI | ${CAP_ICON}${CAP}% | $DATETIME "
+	#xsetroot -name "$BAR"
+	echo "$BAR"
+done
