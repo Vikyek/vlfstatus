@@ -1,0 +1,51 @@
+#!/bin/bash
+
+echo "{ \"version\": 1 }"
+echo "["
+echo "[]"
+
+while true; do
+	source ~/.cache/bar_colors.sh 2>/dev/null || { 
+		COLOR_WIFI="#FF0055"
+		COLOR_BAT_HIGH="#FF0055"
+		COLOR_BAT_MID="#FF0055"
+		COLOR_BAT_LOW="#FF0055"
+		COLOR_TIME="#FF0055"
+		COLOR_TEXT="#FFFFFF"
+		COLOR_SEP="#0DCDCD"
+	}
+
+	DATETIME=$(date +"%d %a %H:%M:%S")
+	WIFI_RAW=$(nmcli dev show wlp8s0 2>/dev/null | grep "GENERAL.CONNECTION" | sed -e "s/^GENERAL.CONNECTION:[ \t]*//")
+	if [[ "$WIFI_RAW" == "--" || -z "$WIFI_RAW" ]]; then
+		WIFI_ICON="󰤮 "
+		WIFI_TEXT="Not connected"
+	else
+		WIFI_ICON="󰖩 "
+		WIFI_TEXT="$WIFI_RAW"
+	fi
+	
+	CAP=$(cat /sys/class/power_supply/BAT0/capacity 2>/dev/null || echo 100)
+	if [[ ((CAP -gt 74)) ]]; then
+		CAP_ICON=" "
+		COLOR_BAT=$COLOR_BAT_HIGH
+	elif [[ ((CAP -gt 49)) ]]; then
+		CAP_ICON=" "
+		COLOR_BAT=$COLOR_BAT_HIGH
+	elif [[ ((CAP -gt 24)) ]]; then
+		CAP_ICON=" "
+		COLOR_BAT=$COLOR_BAT_MID
+	elif [[ ((CAP -gt 10)) ]]; then
+		CAP_ICON=" "
+		COLOR_BAT=$COLOR_BAT_LOW
+	else
+		CAP_ICON=" "
+		COLOR_BAT=$COLOR_BAT_LOW
+	fi
+	
+	BAR=" <span color='$COLOR_SEP'>//</span> <span color='$COLOR_WIFI'>$WIFI_ICON</span><span color='$COLOR_TEXT'>$WIFI_TEXT</span> <span color='$COLOR_SEP'>//</span> <span color='$COLOR_BAT'>$CAP_ICON</span><span color='$COLOR_TEXT'>${CAP}%</span> <span color='$COLOR_SEP'>//</span> <span color='$COLOR_TIME'>󰃰 </span><span color='$COLOR_TEXT'>$DATETIME</span> "
+	
+	echo ",[{\"full_text\": \"$BAR\", \"markup\": \"pango\"}]"
+	
+	sleep 1
+done
