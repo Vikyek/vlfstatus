@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Start fetch_quota.py in background if not running
+pgrep -f "python3 /home/v/Projects/vlfstatus/fetch_quota.py" >/dev/null || python3 /home/v/Projects/vlfstatus/fetch_quota.py >/dev/null 2>&1 &
+
 echo "{ \"version\": 1 }"
 echo "["
 echo "[]"
@@ -42,10 +45,25 @@ while true; do
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_LOW
 	fi
+
+	QUOTA_TEXT=""
+	if [ -f ~/.cache/agy_quota.json ]; then
+		G5H=$(grep -oP '"gemini_5h": "\K[0-9.]+' ~/.cache/agy_quota.json)
+		C5H=$(grep -oP '"claude_5h": "\K[0-9.]+' ~/.cache/agy_quota.json)
+		G_RESET=$(grep -oP '"gemini_5h_reset": "\K[^"]+' ~/.cache/agy_quota.json)
+		C_RESET=$(grep -oP '"claude_5h_reset": "\K[^"]+' ~/.cache/agy_quota.json)
+		if [ -n "$G5H" ] && [ -n "$C5H" ]; then
+			G_INT=${G5H%.*}
+			C_INT=${C5H%.*}
+			
+			QUOTA_TEXT=" <span color='$COLOR_SEP'>//</span> <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${G5H}%</span><span color='$COLOR_SEP'> ${G_RESET}</span>  <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${C5H}%</span><span color='$COLOR_SEP'> ${C_RESET}</span>"
+		fi
+	fi
 	
-	BAR=" <span color='$COLOR_SEP'>//</span> <span color='$COLOR_WIFI'>$WIFI_ICON</span><span color='$COLOR_TEXT'>$WIFI_TEXT</span> <span color='$COLOR_SEP'>//</span> <span color='$COLOR_BAT'>$CAP_ICON</span><span color='$COLOR_TEXT'>${CAP}%</span> <span color='$COLOR_SEP'>//</span> <span color='$COLOR_TIME'>󰃰 </span><span color='$COLOR_TEXT'>$DATETIME</span> "
+	BAR=" <span color='$COLOR_SEP'>//</span> <span color='$COLOR_WIFI'>$WIFI_ICON</span><span color='$COLOR_TEXT'>$WIFI_TEXT</span>$QUOTA_TEXT <span color='$COLOR_SEP'>//</span> <span color='$COLOR_BAT'>$CAP_ICON</span><span color='$COLOR_TEXT'>${CAP}%</span> <span color='$COLOR_SEP'>//</span> <span color='$COLOR_TIME'>󰃰 </span><span color='$COLOR_TEXT'>$DATETIME</span> "
 	
 	echo ",[{\"full_text\": \"$BAR\", \"markup\": \"pango\"}]"
 	
 	sleep 1
 done
+
