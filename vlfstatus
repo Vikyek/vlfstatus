@@ -50,11 +50,45 @@ while true; do
 	if [ -f ~/.cache/agy_quota.json ]; then
 		G5H=$(grep -oP '"gemini_5h": "\K[0-9.]+' ~/.cache/agy_quota.json)
 		C5H=$(grep -oP '"claude_5h": "\K[0-9.]+' ~/.cache/agy_quota.json)
-		G_RESET=$(grep -oP '"gemini_5h_reset": "\K[^"]+' ~/.cache/agy_quota.json)
-		C_RESET=$(grep -oP '"claude_5h_reset": "\K[^"]+' ~/.cache/agy_quota.json)
+		G_EPOCH=$(grep -oP '"gemini_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
+		C_EPOCH=$(grep -oP '"claude_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
+		
 		if [ -n "$G5H" ] && [ -n "$C5H" ]; then
-			G_INT=${G5H%.*}
-			C_INT=${C5H%.*}
+			NOW=$(date +%s)
+			G_RESET="N/A"
+			C_RESET="N/A"
+			
+			if [ -n "$G_EPOCH" ] && [ "$G_EPOCH" -gt 0 ]; then
+				G_SEC=$((G_EPOCH - NOW))
+				if [ $G_SEC -le 0 ]; then
+					G_RESET="0s"
+				else
+					H=$((G_SEC / 3600))
+					M=$(((G_SEC % 3600) / 60))
+					S=$((G_SEC % 60))
+					if [ $H -gt 0 ]; then
+						G_RESET="${H}h${M}m"
+					else
+						G_RESET="${M}m${S}s"
+					fi
+				fi
+			fi
+
+			if [ -n "$C_EPOCH" ] && [ "$C_EPOCH" -gt 0 ]; then
+				C_SEC=$((C_EPOCH - NOW))
+				if [ $C_SEC -le 0 ]; then
+					C_RESET="0s"
+				else
+					H=$((C_SEC / 3600))
+					M=$(((C_SEC % 3600) / 60))
+					S=$((C_SEC % 60))
+					if [ $H -gt 0 ]; then
+						C_RESET="${H}h${M}m"
+					else
+						C_RESET="${M}m${S}s"
+					fi
+				fi
+			fi
 			
 			QUOTA_TEXT=" <span color='$COLOR_SEP'>//</span> <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${G5H}%</span><span color='$COLOR_SEP'> ${G_RESET}</span>  <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${C5H}%</span><span color='$COLOR_SEP'> ${C_RESET}</span>"
 		fi

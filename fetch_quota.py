@@ -118,28 +118,18 @@ def main():
                     rem_frac = bucket.get("remainingFraction", 0.0)
                     rem_pct = round(rem_frac * 100, 1)
                     
-                    reset_str = "N/A"
                     reset_time = bucket.get("resetTime", "")
+                    reset_epoch = 0
                     if reset_time:
-                        from datetime import datetime, timezone
+                        from datetime import datetime
                         try:
                             rt = datetime.fromisoformat(reset_time.replace("Z", "+00:00"))
-                            now = datetime.now(timezone.utc)
-                            delta = rt - now
-                            secs = max(0, int(delta.total_seconds()))
-                            h, rem = divmod(secs, 3600)
-                            m = rem // 60
-                            if h > 24:
-                                d = h // 24
-                                h = h % 24
-                                reset_str = f"{d}d {h}h"
-                            else:
-                                reset_str = f"{h}h{m:02d}m"
+                            reset_epoch = int(rt.timestamp())
                         except Exception:
                             pass
                     
                     output[f"{prefix}_{suffix}"] = f"{rem_pct}%"
-                    output[f"{prefix}_{suffix}_reset"] = reset_str
+                    output[f"{prefix}_{suffix}_reset_epoch"] = reset_epoch
                     
             write_output_json(out_path, output)
             
