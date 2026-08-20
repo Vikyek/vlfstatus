@@ -13,6 +13,7 @@ Originally created as `wlfstatus`, the project has evolved into `vlfstatus` whil
 ## Authored Advancements & Technical Features
 
 - **i3bar JSON Protocol Compliance**: Emits standard `{ "version": 1 }` stream header followed by an infinite JSON block stream (`[{"full_text": "...", "markup": "pango"}]`).
+- **Live AI Agent Quota Tracking**: Integrates a background daemon (`fetch_quota.py`) that securely reads Antigravity tokens from Linux Secret Service (via keyring) and queries Google Cloud Code APIs, displaying remaining 5-hour Gemini/Claude quotas and reset timers.
 - **Pango Rich Text Markup**: Supports inline styling with custom colors and styled section separators (`//`).
 - **Dynamic Theme Cache Integration**: Sourced dynamically from `~/.cache/bar_colors.sh` on every iteration, enabling real-time color scheme updates with built-in fallback hex color tokens (`COLOR_WIFI`, `COLOR_BAT_HIGH`, `COLOR_BAT_MID`, `COLOR_BAT_LOW`, `COLOR_TIME`, `COLOR_TEXT`, `COLOR_SEP`).
 - **Robust Wi-Fi State Detection**: Automatically inspects wireless connection status on `wlp8s0` via `nmcli`, displaying active connection names or disconnected states alongside Nerd Font wireless icons (`󰤨` / `󰤭` and `󰖩` / `󰤮`).
