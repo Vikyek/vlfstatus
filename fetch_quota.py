@@ -130,7 +130,8 @@ def main():
                     
                     output[f"{prefix}_{suffix}"] = f"{rem_pct}%"
                     output[f"{prefix}_{suffix}_reset_epoch"] = reset_epoch
-                    
+            
+            output["last_updated_epoch"] = int(time.time())
             write_output_json(out_path, output)
             
         except Exception as e:
