@@ -18,7 +18,7 @@ def refresh_token(ref_token):
         "grant_type": "refresh_token"
     }).encode("utf-8")
     req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
-    with urllib.request.urlopen(req) as resp:
+    with urllib.request.urlopen(req, timeout=10) as resp:
         res = json.loads(resp.read().decode("utf-8"))
         return res["access_token"], int(res.get("expires_in", 3600))
 
@@ -87,7 +87,7 @@ def fetch_quota_summary(token):
         },
         method="POST"
     )
-    with urllib.request.urlopen(req) as resp:
+    with urllib.request.urlopen(req, timeout=10) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 def write_output_json(out_path, data):
