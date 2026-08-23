@@ -47,7 +47,7 @@ while true; do
 	fi
 
 	QUOTA_TEXT=""
-	if [ -f ~/.cache/agy_quota.json ]; then
+	if command -v agy >/dev/null 2>&1 && [ -f ~/.cache/agy_quota.json ]; then
 		G_5H=$(grep -oP '"gemini_5h": "\K[0-9.]+' ~/.cache/agy_quota.json)
 		G_WK=$(grep -oP '"gemini_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json)
 		C_5H=$(grep -oP '"claude_5h": "\K[0-9.]+' ~/.cache/agy_quota.json)
@@ -58,10 +58,9 @@ while true; do
 			G_RESET="N/A"
 			C_RESET="N/A"
 			
-			# Decide limiting Gemini quota
-			G_5H_INT=${G_5H%.*}
+			# Decide limiting Gemini quota: show 5h unless weekly is 0%
 			G_WK_INT=${G_WK%.*}
-			if [ "$G_WK_INT" -le "$G_5H_INT" ]; then
+			if [ -z "$G_WK_INT" ] || [ "$G_WK_INT" -eq 0 ]; then
 				G5H="$G_WK"
 				G_EPOCH=$(grep -oP '"gemini_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
 			else
@@ -69,10 +68,9 @@ while true; do
 				G_EPOCH=$(grep -oP '"gemini_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
 			fi
 			
-			# Decide limiting Claude quota
-			C_5H_INT=${C_5H%.*}
+			# Decide limiting Claude quota: show 5h unless weekly is 0%
 			C_WK_INT=${C_WK%.*}
-			if [ "$C_WK_INT" -le "$C_5H_INT" ]; then
+			if [ -z "$C_WK_INT" ] || [ "$C_WK_INT" -eq 0 ]; then
 				C5H="$C_WK"
 				C_EPOCH=$(grep -oP '"claude_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
 			else
