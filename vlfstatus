@@ -125,11 +125,16 @@ while true; do
 				fi
 			fi
 			
-			QUOTA_TEXT=" <span color='$COLOR_SEP'>//</span> <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${G5H}%</span><span color='$COLOR_SEP'> ${G_RESET}</span>  <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${C5H}%</span><span color='$COLOR_SEP'> ${C_RESET}</span>"
+			QUOTA_TEXT=" <span color='$COLOR_WIFI'>✦ </span><span color='$COLOR_TEXT'>${G5H}%</span><span color='$COLOR_SEP'> ${G_RESET}</span>  <span color='$COLOR_WIFI'>✱ </span><span color='$COLOR_TEXT'>${C5H}%</span><span color='$COLOR_SEP'> ${C_RESET}</span>"
 		fi
 	fi
 	
-	BAR=" <span color='$COLOR_SEP'>//</span> <span color='$COLOR_WIFI'>$WIFI_ICON</span><span color='$COLOR_TEXT'>$WIFI_TEXT</span>$QUOTA_TEXT <span color='$COLOR_SEP'>//</span> <span color='$COLOR_BAT'>$CAP_ICON</span><span color='$COLOR_TEXT'>${CAP}%</span> <span color='$COLOR_SEP'>//</span> <span color='$COLOR_TIME'>󰃰 </span><span color='$COLOR_TEXT'>$DATETIME</span> "
+	# Build BAR with Quota on the leftmost side (swapped with WiFi)
+	BAR=" <span color='$COLOR_SEP'>//</span>"
+	if [ -n "$QUOTA_TEXT" ]; then
+		BAR="$BAR$QUOTA_TEXT <span color='$COLOR_SEP'>//</span>"
+	fi
+	BAR="$BAR <span color='$COLOR_WIFI'>$WIFI_ICON</span><span color='$COLOR_TEXT'>$WIFI_TEXT</span> <span color='$COLOR_SEP'>//</span> <span color='$COLOR_BAT'>$CAP_ICON</span><span color='$COLOR_TEXT'>${CAP}%</span> <span color='$COLOR_SEP'>//</span> <span color='$COLOR_TIME'>󰃰 </span><span color='$COLOR_TEXT'>$DATETIME</span> "
 	
 	echo ",[{\"full_text\": \"$BAR\", \"markup\": \"pango\"}]"
 	
