@@ -48,16 +48,38 @@ while true; do
 
 	QUOTA_TEXT=""
 	if [ -f ~/.cache/agy_quota.json ]; then
-		G5H=$(grep -oP '"gemini_5h": "\K[0-9.]+' ~/.cache/agy_quota.json)
-		C5H=$(grep -oP '"claude_5h": "\K[0-9.]+' ~/.cache/agy_quota.json)
-		G_EPOCH=$(grep -oP '"gemini_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
-		C_EPOCH=$(grep -oP '"claude_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
+		G_5H=$(grep -oP '"gemini_5h": "\K[0-9.]+' ~/.cache/agy_quota.json)
+		G_WK=$(grep -oP '"gemini_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json)
+		C_5H=$(grep -oP '"claude_5h": "\K[0-9.]+' ~/.cache/agy_quota.json)
+		C_WK=$(grep -oP '"claude_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json)
 		
-		if [ -n "$G5H" ] && [ -n "$C5H" ]; then
+		if [ -n "$G_5H" ] && [ -n "$G_WK" ] && [ -n "$C_5H" ] && [ -n "$C_WK" ]; then
 			NOW=$(date +%s)
 			G_RESET="N/A"
 			C_RESET="N/A"
 			
+			# Decide limiting Gemini quota
+			G_5H_INT=${G_5H%.*}
+			G_WK_INT=${G_WK%.*}
+			if [ "$G_WK_INT" -le "$G_5H_INT" ]; then
+				G5H="$G_WK"
+				G_EPOCH=$(grep -oP '"gemini_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
+			else
+				G5H="$G_5H"
+				G_EPOCH=$(grep -oP '"gemini_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
+			fi
+			
+			# Decide limiting Claude quota
+			C_5H_INT=${C_5H%.*}
+			C_WK_INT=${C_WK%.*}
+			if [ "$C_WK_INT" -le "$C_5H_INT" ]; then
+				C5H="$C_WK"
+				C_EPOCH=$(grep -oP '"claude_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
+			else
+				C5H="$C_5H"
+				C_EPOCH=$(grep -oP '"claude_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
+			fi
+
 			if [ -n "$G_EPOCH" ] && [ "$G_EPOCH" -gt 0 ]; then
 				G_SEC=$((G_EPOCH - NOW))
 				if [ $G_SEC -le 0 ]; then
@@ -67,7 +89,14 @@ while true; do
 					M=$(((G_SEC % 3600) / 60))
 					S=$((G_SEC % 60))
 					if [ $H -gt 0 ]; then
-						G_RESET="${H}h${M}m"
+						# If weekly resets in days, format nicely
+						if [ $H -gt 24 ]; then
+							D=$((H / 24))
+							H=$((H % 24))
+							G_RESET="${D}d${H}h"
+						else
+							G_RESET="${H}h${M}m"
+						fi
 					else
 						G_RESET="${M}m${S}s"
 					fi
@@ -83,7 +112,13 @@ while true; do
 					M=$(((C_SEC % 3600) / 60))
 					S=$((C_SEC % 60))
 					if [ $H -gt 0 ]; then
-						C_RESET="${H}h${M}m"
+						if [ $H -gt 24 ]; then
+							D=$((H / 24))
+							H=$((H % 24))
+							C_RESET="${D}d${H}h"
+						else
+							C_RESET="${H}h${M}m"
+						fi
 					else
 						C_RESET="${M}m${S}s"
 					fi
