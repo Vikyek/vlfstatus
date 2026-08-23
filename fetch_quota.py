@@ -24,6 +24,19 @@ def refresh_token(ref_token):
 
 def get_ref_token():
     try:
+        path = os.path.expanduser("~/.config/opencode/antigravity-accounts.json")
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                data = json.load(f)
+                accounts = data.get("accounts", [])
+                if accounts:
+                    ref_token = accounts[0].get("refreshToken")
+                    if ref_token:
+                        return ref_token
+    except Exception:
+        pass
+
+    try:
         connection = secretstorage.dbus_init()
         collections = list(secretstorage.get_all_collections(connection))
         for collection in collections:
@@ -32,7 +45,7 @@ def get_ref_token():
                 if attrs.get('service') == 'gemini' and attrs.get('username') == 'antigravity':
                     secret_data = json.loads(item.get_secret().decode('utf-8', errors='ignore'))
                     return secret_data.get("token", {}).get("refresh_token")
-    except Exception as e:
+    except Exception:
         pass
     return None
 
@@ -95,11 +108,18 @@ def main():
     out_path = os.path.expanduser("~/.cache/agy_quota.json")
     
     while True:
+        current_data = {}
+        if os.path.exists(out_path):
+            try:
+                with open(out_path, "r") as f:
+                    current_data = json.load(f)
+            except Exception:
+                pass
+
         try:
             ref_token = get_ref_token()
             if not ref_token:
-                time.sleep(60)
-                continue
+                raise Exception("No refresh token available")
                 
             token, expiry = load_cached_token(cache_path)
             if not token:
@@ -134,8 +154,12 @@ def main():
             output["last_updated_epoch"] = int(time.time())
             write_output_json(out_path, output)
             
-        except Exception as e:
-            pass
+        except Exception:
+            if current_data:
+                current_data["last_updated_epoch"] = int(time.time())
+                write_output_json(out_path, current_data)
+            else:
+                write_output_json(out_path, {"last_updated_epoch": int(time.time())})
             
         time.sleep(60)
 
