@@ -139,7 +139,7 @@ while true; do
 				REFRESH_TXT=" <span color='$COLOR_SEP'>⟳${AGE_TXT}</span>"
 			fi
 			
-			QUOTA_TEXT=" <span color='$COLOR_TEXT'>✦</span><span color='$COLOR_TEXT'>${G5H}%</span><span color='$COLOR_SEP'>:${G_RESET}</span> <span color='$COLOR_WIFI'>✱</span><span color='$COLOR_TEXT'>${C5H}%</span><span color='$COLOR_SEP'>:${C_RESET}</span>${REFRESH_TXT}"
+			QUOTA_TEXT=" <span color='$COLOR_TEXT'> </span><span color='$COLOR_TEXT'>${G5H}%</span><span color='$COLOR_SEP'> ${G_RESET}</span> <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${C5H}%</span><span color='$COLOR_SEP'> ${C_RESET}</span>${REFRESH_TXT}"
 		fi
 	fi
 	
