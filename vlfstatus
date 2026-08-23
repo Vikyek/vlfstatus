@@ -157,9 +157,6 @@ while true; do
 
 	# Active App Indicators
 	APP_INDICATORS=""
-	if pgrep -f bitwarden >/dev/null 2>&1; then
-		APP_INDICATORS="$APP_INDICATORS <span color='#3892e0'>󰞵</span>"
-	fi
 	if pgrep -f gitkraken >/dev/null 2>&1; then
 		APP_INDICATORS="$APP_INDICATORS <span color='#179287'></span>"
 	fi
