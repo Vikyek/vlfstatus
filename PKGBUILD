@@ -7,7 +7,12 @@ pkgdesc="Lightweight, feature-packed bash status bar generator for i3bar and swa
 arch=('any')
 url="https://github.com/Vikyek/vlfstatus"
 license=('MIT')
-depends=('bash' 'python' 'python-secretstorage')
+depends=('bash' 'networkmanager' 'libpulse')
+optdepends=(
+  'python: For live AI quota tracking daemon (fetch_quota.py)'
+  'python-secretstorage: For reading tokens from system keyring'
+  'agy-cli: For checking/displaying Google Cloud Code quota'
+)
 makedepends=('git')
 provides=("$_pkgname")
 conflicts=("$_pkgname")
