@@ -8,9 +8,6 @@ echo "["
 echo "[]"
 
 while true; do
-	# Compatibility: Source old wlfstatus config and map variables if present
-	source ~/.config/wlfstatus/config 2>/dev/null || source ~/.wlfstatusrc 2>/dev/null || true
-	
 	source ~/.cache/bar_colors.sh 2>/dev/null || { 
 		COLOR_WIFI="#FF0055"
 		COLOR_BAT_HIGH="#FF0055"
@@ -20,11 +17,7 @@ while true; do
 		COLOR_TEXT="#FFFFFF"
 		COLOR_SEP="#0DCDCD"
 	}
-
-	[ -n "$WLF_COLOR_WIFI" ] && COLOR_WIFI="$WLF_COLOR_WIFI"
-	[ -n "$WLF_COLOR_TEXT" ] && COLOR_TEXT="$WLF_COLOR_TEXT"
-	[ -n "$WLF_COLOR_SEP" ] && COLOR_SEP="$WLF_COLOR_SEP"
-	[ -n "$WLF_COLOR_TIME" ] && COLOR_TIME="$WLF_COLOR_TIME"
+	source ~/.config/vlfstatus/config 2>/dev/null
 
 	DATETIME=$(date +"%d %a %H:%M:%S")
 	WIFI_RAW=$(nmcli dev show wlp8s0 2>/dev/null | grep "GENERAL.CONNECTION" | sed -e "s/^GENERAL.CONNECTION:[ \t]*//")
