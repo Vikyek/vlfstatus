@@ -13,3 +13,4 @@
 /src/
 /*.pkg.tar.zst
 /nohup.out
+__pycache__/

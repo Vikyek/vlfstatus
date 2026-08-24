@@ -23,6 +23,22 @@ Originally created as `wlfstatus`, the project has evolved into `vlfstatus` whil
 
 ---
 
+## Dependencies
+
+### Mandatory Dependencies
+The core script features require the following tools:
+- **`bash`**: Core runtime interpreter.
+- **`networkmanager`**: Provides `nmcli` for Wi-Fi SSID and state tracking.
+- **`libpulse`**: Provides `pactl` for master volume/mute level querying.
+
+### Optional Dependencies
+To enable the **AI Agent Quota Tracker** (`fetch_quota.py`) module:
+- **`python`**: Runs the daemon process.
+- **`python-secretstorage`**: Reads token authentication credentials securely from your desktop's keyring.
+- **`agy-cli`**: Required to enable quota tracking (the status bar will hide the module entirely if `agy` is not installed on the system).
+
+---
+
 ## Installation & Setup
 
 ### 1. Repository Setup & Binary Installation
