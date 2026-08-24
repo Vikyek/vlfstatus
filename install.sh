@@ -47,11 +47,13 @@ if [ -e "$HOME/.local/bin/wlfstatus" ] || [ -L "$HOME/.local/bin/wlfstatus" ]; t
     rm -f "$HOME/.local/bin/wlfstatus"
 fi
 
-# 4. Install the new vlfstatus script
+# 4. Install the new vlfstatus script and quota daemon
 mkdir -p "$HOME/.local/bin"
 cp -f vlfstatus "$HOME/.local/bin/vlfstatus"
 chmod +x "$HOME/.local/bin/vlfstatus"
-echo "vlfstatus script installed to $HOME/.local/bin/vlfstatus"
+cp -f fetch_quota.py "$HOME/.local/bin/fetch_quota.py"
+chmod +x "$HOME/.local/bin/fetch_quota.py"
+echo "vlfstatus script and quota daemon installed to $HOME/.local/bin/"
 
 # 5. Reload/restart i3 status bar
 echo "Restarting i3 wm/bar to apply changes..."

@@ -1,7 +1,16 @@
 #!/bin/bash
 
 # Start fetch_quota.py in background if not running
-pgrep -f "python3 /home/v/Projects/vlfstatus/fetch_quota.py" >/dev/null || python3 /home/v/Projects/vlfstatus/fetch_quota.py >/dev/null 2>&1 &
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+if [ -f "$SCRIPT_DIR/fetch_quota.py" ]; then
+    FETCH_QUOTA_PATH="$SCRIPT_DIR/fetch_quota.py"
+elif [ -f "/usr/share/vlfstatus/fetch_quota.py" ]; then
+    FETCH_QUOTA_PATH="/usr/share/vlfstatus/fetch_quota.py"
+else
+    FETCH_QUOTA_PATH="/home/v/Projects/vlfstatus/fetch_quota.py"
+fi
+
+pgrep -f "python3 $FETCH_QUOTA_PATH" >/dev/null || python3 "$FETCH_QUOTA_PATH" >/dev/null 2>&1 &
 
 echo "{ \"version\": 1 }"
 echo "["

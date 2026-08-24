@@ -7,3 +7,9 @@
 *~
 *.tmp
 .DS_Store
+
+# Arch package build files
+/pkg/
+/src/
+/*.pkg.tar.zst
+/nohup.out

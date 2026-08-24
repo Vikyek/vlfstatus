@@ -1,0 +1,17 @@
+pkgbase = vlfstatus-git
+	pkgdesc = Lightweight, feature-packed bash status bar generator for i3bar and swaybar with live AI agent quota tracking
+	pkgver = r10.b4e5ba6
+	pkgrel = 1
+	url = https://github.com/Vikyek/vlfstatus
+	arch = any
+	license = MIT
+	makedepends = git
+	depends = bash
+	depends = python
+	depends = python-secretstorage
+	provides = vlfstatus
+	conflicts = vlfstatus
+	source = git+https://github.com/Vikyek/vlfstatus.git
+	sha256sums = SKIP
+
+pkgname = vlfstatus-git
