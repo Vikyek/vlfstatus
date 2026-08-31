@@ -39,7 +39,11 @@ while true; do
 	fi
 	
 	CAP=$(cat /sys/class/power_supply/BAT0/capacity 2>/dev/null || echo 100)
-	if [[ ((CAP -gt 74)) ]]; then
+	BAT_STATUS=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null || echo "Unknown")
+	if [[ "$BAT_STATUS" == "Charging" ]]; then
+		CAP_ICON="󰂄 "
+		COLOR_BAT=$COLOR_BAT_HIGH
+	elif [[ ((CAP -gt 74)) ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_HIGH
 	elif [[ ((CAP -gt 49)) ]]; then
