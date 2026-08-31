@@ -58,82 +58,23 @@ while true; do
 
 	QUOTA_TEXT=""
 	if command -v agy >/dev/null 2>&1 && [ -f ~/.cache/agy_quota.json ]; then
-		G_5H=$(grep -oP '"gemini_5h": "\K[0-9.]+' ~/.cache/agy_quota.json)
-		G_WK=$(grep -oP '"gemini_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json)
-		C_5H=$(grep -oP '"claude_5h": "\K[0-9.]+' ~/.cache/agy_quota.json)
-		C_WK=$(grep -oP '"claude_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json)
+		G_5H_ARR=($(grep -oP '"gemini_5h": "\K[0-9.]+' ~/.cache/agy_quota.json))
+		G_WK_ARR=($(grep -oP '"gemini_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json))
+		C_5H_ARR=($(grep -oP '"claude_5h": "\K[0-9.]+' ~/.cache/agy_quota.json))
+		C_WK_ARR=($(grep -oP '"claude_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json))
 		
-		if [ -n "$G_5H" ] && [ -n "$G_WK" ] && [ -n "$C_5H" ] && [ -n "$C_WK" ]; then
+		G_5H_EPOCH_ARR=($(grep -oP '"gemini_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
+		G_WK_EPOCH_ARR=($(grep -oP '"gemini_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
+		C_5H_EPOCH_ARR=($(grep -oP '"claude_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
+		C_WK_EPOCH_ARR=($(grep -oP '"claude_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
+
+		NUM_ACCOUNTS=${#G_5H_ARR[@]}
+
+		if [ $NUM_ACCOUNTS -gt 0 ]; then
 			NOW=$(date +%s)
-			G_RESET="N/A"
-			C_RESET="N/A"
+			MULTI_ACCOUNT_MODE=${MULTI_ACCOUNT_MODE:-"combine"}
 			
-			# Decide limiting Gemini quota: show 5h unless weekly is 0%
-			G_WK_INT=${G_WK%.*}
-			if [ -z "$G_WK_INT" ] || [ "$G_WK_INT" -eq 0 ]; then
-				G5H="$G_WK"
-				G_EPOCH=$(grep -oP '"gemini_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
-			else
-				G5H="$G_5H"
-				G_EPOCH=$(grep -oP '"gemini_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
-			fi
-			
-			# Decide limiting Claude quota: show 5h unless weekly is 0%
-			C_WK_INT=${C_WK%.*}
-			if [ -z "$C_WK_INT" ] || [ "$C_WK_INT" -eq 0 ]; then
-				C5H="$C_WK"
-				C_EPOCH=$(grep -oP '"claude_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
-			else
-				C5H="$C_5H"
-				C_EPOCH=$(grep -oP '"claude_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
-			fi
-
-			if [ -n "$G_EPOCH" ] && [ "$G_EPOCH" -gt 0 ]; then
-				G_SEC=$((G_EPOCH - NOW))
-				if [ $G_SEC -le 0 ]; then
-					G_RESET="0s"
-				else
-					H=$((G_SEC / 3600))
-					M=$(((G_SEC % 3600) / 60))
-					S=$((G_SEC % 60))
-					if [ $H -gt 0 ]; then
-						# If weekly resets in days, format nicely
-						if [ $H -gt 24 ]; then
-							D=$((H / 24))
-							H=$((H % 24))
-							G_RESET="${D}d${H}h"
-						else
-							G_RESET="${H}h${M}m"
-						fi
-					else
-						G_RESET="${M}m${S}s"
-					fi
-				fi
-			fi
-
-			if [ -n "$C_EPOCH" ] && [ "$C_EPOCH" -gt 0 ]; then
-				C_SEC=$((C_EPOCH - NOW))
-				if [ $C_SEC -le 0 ]; then
-					C_RESET="0s"
-				else
-					H=$((C_SEC / 3600))
-					M=$(((C_SEC % 3600) / 60))
-					S=$((C_SEC % 60))
-					if [ $H -gt 0 ]; then
-						if [ $H -gt 24 ]; then
-							D=$((H / 24))
-							H=$((H % 24))
-							C_RESET="${D}d${H}h"
-						else
-							C_RESET="${H}h${M}m"
-						fi
-					else
-						C_RESET="${M}m${S}s"
-					fi
-				fi
-			fi
-			
-			LAST_UPDATED=$(grep -oP '"last_updated_epoch": \K[0-9]+' ~/.cache/agy_quota.json)
+			LAST_UPDATED=$(grep -oP '"last_updated_epoch": \K[0-9]+' ~/.cache/agy_quota.json | head -n1)
 			REFRESH_TXT=""
 			if [ -n "$LAST_UPDATED" ]; then
 				AGE=$((NOW - LAST_UPDATED))
@@ -147,7 +88,122 @@ while true; do
 				REFRESH_TXT=" <span color='$COLOR_SEP'>⟳ ${AGE_TXT}</span>"
 			fi
 			
-			QUOTA_TEXT=" <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${G5H}%</span><span color='$COLOR_SEP'> ${G_RESET}</span> <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${C5H}%</span><span color='$COLOR_SEP'> ${C_RESET}</span>${REFRESH_TXT}"
+			function format_reset_time() {
+				local SEC=$1
+				if [ $SEC -le 0 ]; then
+					echo "0s"
+				else
+					local H=$((SEC / 3600))
+					local M=$(((SEC % 3600) / 60))
+					local S=$((SEC % 60))
+					if [ $H -gt 0 ]; then
+						if [ $H -gt 24 ]; then
+							local D=$((H / 24))
+							H=$((H % 24))
+							echo "${D}d${H}h"
+						else
+							echo "${H}h${M}m"
+						fi
+					else
+						echo "${M}m${S}s"
+					fi
+				fi
+			}
+
+			if [ "$MULTI_ACCOUNT_MODE" = "separate" ]; then
+				for ((i=0; i<$NUM_ACCOUNTS; i++)); do
+					G_5H="${G_5H_ARR[$i]}"
+					G_WK="${G_WK_ARR[$i]}"
+					C_5H="${C_5H_ARR[$i]}"
+					C_WK="${C_WK_ARR[$i]}"
+
+					G_WK_INT=${G_WK%.*}
+					if [ -z "$G_WK_INT" ] || [ "$G_WK_INT" -eq 0 ]; then
+						G5H="$G_WK"
+						G_EPOCH="${G_WK_EPOCH_ARR[$i]}"
+					else
+						G5H="$G_5H"
+						G_EPOCH="${G_5H_EPOCH_ARR[$i]}"
+					fi
+
+					C_WK_INT=${C_WK%.*}
+					if [ -z "$C_WK_INT" ] || [ "$C_WK_INT" -eq 0 ]; then
+						C5H="$C_WK"
+						C_EPOCH="${C_WK_EPOCH_ARR[$i]}"
+					else
+						C5H="$C_5H"
+						C_EPOCH="${C_5H_EPOCH_ARR[$i]}"
+					fi
+
+					G_RESET="N/A"
+					if [ -n "$G_EPOCH" ] && [ "$G_EPOCH" -gt 0 ]; then
+						G_RESET=$(format_reset_time $((G_EPOCH - NOW)))
+					fi
+
+					C_RESET="N/A"
+					if [ -n "$C_EPOCH" ] && [ "$C_EPOCH" -gt 0 ]; then
+						C_RESET=$(format_reset_time $((C_EPOCH - NOW)))
+					fi
+
+					# Build string per account
+					QUOTA_TEXT="$QUOTA_TEXT <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${G5H}%</span><span color='$COLOR_SEP'> ${G_RESET}</span> <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${C5H}%</span><span color='$COLOR_SEP'> ${C_RESET}</span>"
+				done
+				QUOTA_TEXT="$QUOTA_TEXT${REFRESH_TXT}"
+			else
+				# Combined mode
+				TOTAL_G=0
+				TOTAL_C=0
+				MIN_G_EPOCH=99999999999
+				MIN_C_EPOCH=99999999999
+
+				for ((i=0; i<$NUM_ACCOUNTS; i++)); do
+					G_5H="${G_5H_ARR[$i]}"
+					G_WK="${G_WK_ARR[$i]}"
+					C_5H="${C_5H_ARR[$i]}"
+					C_WK="${C_WK_ARR[$i]}"
+
+					G_WK_INT=${G_WK%.*}
+					if [ -z "$G_WK_INT" ] || [ "$G_WK_INT" -eq 0 ]; then
+						G5H="$G_WK"
+						G_EPOCH="${G_WK_EPOCH_ARR[$i]}"
+					else
+						G5H="$G_5H"
+						G_EPOCH="${G_5H_EPOCH_ARR[$i]}"
+					fi
+
+					C_WK_INT=${C_WK%.*}
+					if [ -z "$C_WK_INT" ] || [ "$C_WK_INT" -eq 0 ]; then
+						C5H="$C_WK"
+						C_EPOCH="${C_WK_EPOCH_ARR[$i]}"
+					else
+						C5H="$C_5H"
+						C_EPOCH="${C_5H_EPOCH_ARR[$i]}"
+					fi
+
+					TOTAL_G=$(awk "BEGIN {print $TOTAL_G + $G5H}")
+					TOTAL_C=$(awk "BEGIN {print $TOTAL_C + $C5H}")
+
+					# Only consider epochs > 0
+					if [ -n "$G_EPOCH" ] && [ "$G_EPOCH" -gt 0 ] && [ "$G_EPOCH" -lt "$MIN_G_EPOCH" ]; then
+						MIN_G_EPOCH=$G_EPOCH
+					fi
+					if [ -n "$C_EPOCH" ] && [ "$C_EPOCH" -gt 0 ] && [ "$C_EPOCH" -lt "$MIN_C_EPOCH" ]; then
+						MIN_C_EPOCH=$C_EPOCH
+					fi
+				done
+
+				G_RESET="N/A"
+				if [ "$MIN_G_EPOCH" -ne 99999999999 ]; then
+					G_RESET=$(format_reset_time $((MIN_G_EPOCH - NOW)))
+				fi
+
+				C_RESET="N/A"
+				if [ "$MIN_C_EPOCH" -ne 99999999999 ]; then
+					C_RESET=$(format_reset_time $((MIN_C_EPOCH - NOW)))
+				fi
+
+				QUOTA_TEXT=" <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${TOTAL_G}%</span><span color='$COLOR_SEP'> ${G_RESET}</span> <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${TOTAL_C}%</span><span color='$COLOR_SEP'> ${C_RESET}</span>${REFRESH_TXT}"
+			fi
 		fi
 	fi
 	
