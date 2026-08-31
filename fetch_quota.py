@@ -22,17 +22,18 @@ def refresh_token(ref_token):
         res = json.loads(resp.read().decode("utf-8"))
         return res["access_token"], int(res.get("expires_in", 3600))
 
-def get_ref_token():
+def get_ref_tokens():
+    tokens = []
     try:
         path = os.path.expanduser("~/.config/opencode/antigravity-accounts.json")
         if os.path.exists(path):
             with open(path, "r") as f:
                 data = json.load(f)
                 accounts = data.get("accounts", [])
-                if accounts:
-                    ref_token = accounts[0].get("refreshToken")
-                    if ref_token:
-                        return ref_token
+                for acc in accounts:
+                    ref_token = acc.get("refreshToken")
+                    if ref_token and ref_token not in tokens:
+                        tokens.append(ref_token)
     except Exception:
         pass
 
@@ -44,10 +45,12 @@ def get_ref_token():
                 attrs = item.get_attributes()
                 if attrs.get('service') == 'gemini' and attrs.get('username') == 'antigravity':
                     secret_data = json.loads(item.get_secret().decode('utf-8', errors='ignore'))
-                    return secret_data.get("token", {}).get("refresh_token")
+                    ref_token = secret_data.get("token", {}).get("refresh_token")
+                    if ref_token and ref_token not in tokens:
+                        tokens.append(ref_token)
     except Exception:
         pass
-    return None
+    return tokens
 
 def load_cached_token(cache_path):
     if not os.path.exists(cache_path):
@@ -103,8 +106,8 @@ def write_output_json(out_path, data):
             os.remove(temp_path)
 
 def main():
+    import hashlib
     cache_dir = os.path.expanduser("~/.cache/token-conso")
-    cache_path = os.path.join(cache_dir, "antigravity-auth.json")
     out_path = os.path.expanduser("~/.cache/agy_quota.json")
     
     while True:
@@ -117,39 +120,51 @@ def main():
                 pass
 
         try:
-            ref_token = get_ref_token()
-            if not ref_token:
-                raise Exception("No refresh token available")
-                
-            token, expiry = load_cached_token(cache_path)
-            if not token:
-                token, expires_in = refresh_token(ref_token)
-                save_cached_token(cache_path, token, expires_in)
-                
-            summary = fetch_quota_summary(token)
+            ref_tokens = get_ref_tokens()
+            if not ref_tokens:
+                raise Exception("No refresh tokens available")
             
-            output = {}
-            for group in summary.get("groups", []):
-                disp_name = group.get("displayName", "")
-                prefix = "gemini" if "Gemini" in disp_name else "claude"
-                for bucket in group.get("buckets", []):
-                    window = bucket.get("window", "")
-                    suffix = "5h" if window == "5h" else "weekly"
-                    rem_frac = bucket.get("remainingFraction", 0.0)
-                    rem_pct = round(rem_frac * 100, 1)
+            output = {"accounts": []}
+
+            for idx, ref_token in enumerate(ref_tokens):
+                # Use a hash of the refresh token to create a unique cache path
+                token_hash = hashlib.sha256(ref_token.encode('utf-8')).hexdigest()[:16]
+                cache_path = os.path.join(cache_dir, f"antigravity-auth-{token_hash}.json")
+
+                try:
+                    token, expiry = load_cached_token(cache_path)
+                    if not token:
+                        token, expires_in = refresh_token(ref_token)
+                        save_cached_token(cache_path, token, expires_in)
+
+                    summary = fetch_quota_summary(token)
                     
-                    reset_time = bucket.get("resetTime", "")
-                    reset_epoch = 0
-                    if reset_time:
-                        from datetime import datetime
-                        try:
-                            rt = datetime.fromisoformat(reset_time.replace("Z", "+00:00"))
-                            reset_epoch = int(rt.timestamp())
-                        except Exception:
-                            pass
+                    acc_output = {}
+                    for group in summary.get("groups", []):
+                        disp_name = group.get("displayName", "")
+                        prefix = "gemini" if "Gemini" in disp_name else "claude"
+                        for bucket in group.get("buckets", []):
+                            window = bucket.get("window", "")
+                            suffix = "5h" if window == "5h" else "weekly"
+                            rem_frac = bucket.get("remainingFraction", 0.0)
+                            rem_pct = round(rem_frac * 100, 1)
+
+                            reset_time = bucket.get("resetTime", "")
+                            reset_epoch = 0
+                            if reset_time:
+                                from datetime import datetime
+                                try:
+                                    rt = datetime.fromisoformat(reset_time.replace("Z", "+00:00"))
+                                    reset_epoch = int(rt.timestamp())
+                                except Exception:
+                                    pass
+
+                            acc_output[f"{prefix}_{suffix}"] = f"{rem_pct}%"
+                            acc_output[f"{prefix}_{suffix}_reset_epoch"] = reset_epoch
                     
-                    output[f"{prefix}_{suffix}"] = f"{rem_pct}%"
-                    output[f"{prefix}_{suffix}_reset_epoch"] = reset_epoch
+                    output["accounts"].append(acc_output)
+                except Exception as e:
+                    pass # Skip failing tokens
             
             output["last_updated_epoch"] = int(time.time())
             write_output_json(out_path, output)
