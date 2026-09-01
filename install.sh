@@ -1,7 +1,28 @@
 #!/bin/bash
 set -e
 
-echo "Installing vlfstatus..."
+# Color setup supporting NO_COLOR
+if [ -z "${NO_COLOR}" ] && [ -t 1 ]; then
+    C_RESET='\033[0m'
+    C_INFO='\033[1;34m'
+    C_SUCCESS='\033[1;32m'
+    C_WARN='\033[1;33m'
+    C_BOLD='\033[1m'
+else
+    C_RESET=''
+    C_INFO=''
+    C_SUCCESS=''
+    C_WARN=''
+    C_BOLD=''
+fi
+
+info() { echo -e "${C_INFO}[INFO]${C_RESET} $*"; }
+success() { echo -e "${C_SUCCESS}[✔]${C_RESET} $*"; }
+warn() { echo -e "${C_WARN}[WARN]${C_RESET} $*"; }
+
+echo ""
+info "Starting ${C_BOLD}vlfstatus${C_RESET} installation process..."
+echo ""
 
 # 1. Check for legacy configuration files and migrate them
 CONFIG_SRC=""
@@ -12,7 +33,7 @@ elif [ -f "$HOME/.wlfstatusrc" ]; then
 fi
 
 if [ -n "$CONFIG_SRC" ]; then
-    echo "Found legacy configuration at $CONFIG_SRC. Migrating..."
+    info "Found legacy configuration at ${C_BOLD}$CONFIG_SRC${C_RESET}. Migrating..."
     # Ensure the new config directory exists
     mkdir -p "$HOME/.config/vlfstatus"
     
@@ -29,40 +50,43 @@ if [ -n "$CONFIG_SRC" ]; then
         done < "$CONFIG_SRC"
     } > "$HOME/.config/vlfstatus/config"
     
-    echo "Migration completed: variables saved to $HOME/.config/vlfstatus/config"
+    success "Migration completed: variables saved to ${C_BOLD}$HOME/.config/vlfstatus/config${C_RESET}"
 fi
 
 # 2. Update i3 status command configuration to use vlfstatus instead of wlfstatus
 I3_CONFIG="$HOME/.config/i3/config"
 if [ -f "$I3_CONFIG" ]; then
     if grep -q "status_command.*wlfstatus" "$I3_CONFIG"; then
-        echo "Updating i3 status command in $I3_CONFIG..."
+        info "Updating i3 status command in ${C_BOLD}$I3_CONFIG${C_RESET}..."
         sed -i 's/status_command.*wlfstatus/status_command $HOME\/.local\/bin\/vlfstatus/g' "$I3_CONFIG"
     fi
 fi
 
 # 3. Remove old wlfstatus symlink or binary
 if [ -e "$HOME/.local/bin/wlfstatus" ] || [ -L "$HOME/.local/bin/wlfstatus" ]; then
-    echo "Removing legacy wlfstatus executable..."
+    info "Removing legacy wlfstatus executable..."
     rm -f "$HOME/.local/bin/wlfstatus"
 fi
 
 # 4. Install the new vlfstatus script and quota daemon
+info "Installing binaries..."
 mkdir -p "$HOME/.local/bin"
 cp -f vlfstatus "$HOME/.local/bin/vlfstatus"
 chmod +x "$HOME/.local/bin/vlfstatus"
 cp -f fetch_quota.py "$HOME/.local/bin/fetch_quota.py"
 chmod +x "$HOME/.local/bin/fetch_quota.py"
-echo "vlfstatus script and quota daemon installed to $HOME/.local/bin/"
+success "Scripts installed to ${C_BOLD}$HOME/.local/bin/${C_RESET}"
 
 # 5. Reload/restart i3 status bar
-echo "Restarting i3 wm/bar to apply changes..."
+info "Restarting i3 wm/bar to apply changes..."
 # Find active i3 socket
 I3_SOCKET=$(ls -1 /run/user/$(id -u)/i3/ipc-socket.* 2>/dev/null | head -n 1 || true)
 if [ -S "$I3_SOCKET" ]; then
-    i3-msg -s "$I3_SOCKET" restart || true
+    i3-msg -s "$I3_SOCKET" restart >/dev/null 2>&1 || true
 else
-    i3-msg restart || true
+    i3-msg restart >/dev/null 2>&1 || true
 fi
 
-echo "vlfstatus installation and migration completed successfully!"
+echo ""
+success "vlfstatus installation and migration completed successfully!"
+echo ""
