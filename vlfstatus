@@ -237,10 +237,17 @@ while true; do
 	MUTE_STATUS=$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null | awk '{print $2}')
 	VOL_RAW=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | grep -Po '[0-9]+(?=%)' | head -n1)
 	if [ -n "$VOL_RAW" ]; then
-		if [ "$MUTE_STATUS" = "yes" ]; then
+		if [ "$MUTE_STATUS" = "yes" ] || [ "$VOL_RAW" -eq 0 ]; then
 			VOL_INDICATOR=" <span color='$COLOR_BAT_LOW'>󰝟 </span><span color='$COLOR_TEXT'>mute</span>"
 		else
-			VOL_INDICATOR=" <span color='$COLOR_TIME'> </span><span color='$COLOR_TEXT'>${VOL_RAW}%</span>"
+			if [ "$VOL_RAW" -gt 66 ]; then
+				VOL_ICON=" "
+			elif [ "$VOL_RAW" -gt 33 ]; then
+				VOL_ICON=" "
+			else
+				VOL_ICON=" "
+			fi
+			VOL_INDICATOR=" <span color='$COLOR_TIME'>${VOL_ICON}</span><span color='$COLOR_TEXT'>${VOL_RAW}%</span>"
 		fi
 	fi
 
