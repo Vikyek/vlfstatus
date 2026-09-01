@@ -32,7 +32,9 @@ while true; do
 	}
 	source ~/.config/vlfstatus/config 2>/dev/null
 
-	DATETIME=$(date +"%d %a %H:%M:%S")
+	# ⚡ Bolt Optimization: Use bash built-ins for date formatting and reading files.
+	# Avoids expensive fork/exec of `date` and `cat` subprocesses every second.
+	printf -v DATETIME "%(%d %a %H:%M:%S)T" -1
 	WIFI_RAW=$(nmcli dev show wlp8s0 2>/dev/null | grep "GENERAL.CONNECTION" | sed -e "s/^GENERAL.CONNECTION:[ \t]*//")
 	if [[ "$WIFI_RAW" == "--" || -z "$WIFI_RAW" ]]; then
 		WIFI_ICON="󰤮 "
@@ -50,8 +52,8 @@ while true; do
 		WIFI_TEXT="${WIFI_TEXT//\"/\\\"}"
 	fi
 	
-	CAP=$(cat /sys/class/power_supply/BAT0/capacity 2>/dev/null || echo 100)
-	BAT_STATUS=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null || echo "Unknown")
+	read -r CAP 2>/dev/null < /sys/class/power_supply/BAT0/capacity || CAP=100
+	read -r BAT_STATUS 2>/dev/null < /sys/class/power_supply/BAT0/status || BAT_STATUS="Unknown"
 	if [[ "$BAT_STATUS" == "Charging" ]]; then
 		CAP_ICON="󰂄 "
 		COLOR_BAT=$COLOR_BAT_HIGH
@@ -95,7 +97,7 @@ while true; do
 		fi
 
 		if [ $LAST_NUM_ACCOUNTS -gt 0 ]; then
-			NOW=$(date +%s)
+			NOW=$EPOCHSECONDS
 			MULTI_ACCOUNT_MODE=${MULTI_ACCOUNT_MODE:-"combine"}
 			
 			REFRESH_TXT=""
