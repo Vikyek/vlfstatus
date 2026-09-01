@@ -7,18 +7,23 @@ if [ -z "${NO_COLOR}" ] && [ -t 1 ]; then
     C_INFO='\033[1;34m'
     C_SUCCESS='\033[1;32m'
     C_WARN='\033[1;33m'
+    C_ERROR='\033[1;31m'
     C_BOLD='\033[1m'
 else
     C_RESET=''
     C_INFO=''
     C_SUCCESS=''
     C_WARN=''
+    C_ERROR=''
     C_BOLD=''
 fi
 
 info() { echo -e "${C_INFO}[INFO]${C_RESET} $*"; }
 success() { echo -e "${C_SUCCESS}[✔]${C_RESET} $*"; }
 warn() { echo -e "${C_WARN}[WARN]${C_RESET} $*"; }
+error() { echo -e "${C_ERROR}[✖ ERROR]${C_RESET} $*" >&2; }
+
+trap 'error "Installation failed at line $LINENO (exit code $?)"' ERR
 
 echo ""
 info "Starting ${C_BOLD}vlfstatus${C_RESET} installation process..."
