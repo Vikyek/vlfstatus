@@ -2,3 +2,8 @@
 **Vulnerability:** The Wi-Fi connection name (SSID) retrieved from `nmcli` was inserted directly into the JSON and Pango markup output without any sanitization. A malicious SSID containing characters like `<`, `>`, `&`, `"`, or `\` could cause JSON parsing errors or Pango markup injection, potentially crashing the status bar or leading to XSS-like behaviors.
 **Learning:** In bash scripts generating structured output (JSON, HTML, Pango) from external untrusted input (like Wi-Fi SSIDs), input must be rigorously sanitized. When using bash parameter expansion for replacement, one must be careful with bash 5.2+'s `patsub_replacement` option, where unescaped `&` in the replacement string acts as a backreference. Disabling it with `shopt -u patsub_replacement 2>/dev/null || true` ensures cross-version compatibility for replacements like `&amp;`.
 **Prevention:** Always escape special characters (e.g., `\`, `"`, `&`, `<`, `>`) in external strings before interpolating them into JSON or markup formats. Ensure escaping is robust across different shell configurations.
+
+## 2025-02-14 - Replace insecure os.system call
+**Vulnerability:** A script `patch_font.py` used `os.system("fc-cache -f")` to refresh the font cache.
+**Learning:** Using `os.system` executes commands in a shell environment, which leaves the script vulnerable to shell injection if any user input or variables are ever introduced, and relies on the shell's behavior which is generally insecure.
+**Prevention:** Always use `subprocess.run` with a list of arguments (e.g., `["fc-cache", "-f"]`) to execute external commands directly without spawning a shell.
