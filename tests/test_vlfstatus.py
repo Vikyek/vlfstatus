@@ -25,7 +25,7 @@ class TestVlfstatus(unittest.TestCase):
 
     def test_fetch_quota_definitions(self):
         """Verify core functions are defined in fetch_quota."""
-        self.assertTrue(hasattr(fetch_quota, 'get_ref_token'))
+        self.assertTrue(hasattr(fetch_quota, 'get_ref_tokens'))
         self.assertTrue(hasattr(fetch_quota, 'fetch_quota_summary'))
         self.assertTrue(hasattr(fetch_quota, 'refresh_token'))
 

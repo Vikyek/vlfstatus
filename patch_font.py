@@ -1,5 +1,6 @@
 import fontforge
 import os
+import subprocess
 
 def patch():
     font_path = "/usr/share/fonts/TTF/ShureTechMonoNerdFontPropo-Regular.ttf"
@@ -60,7 +61,7 @@ def patch():
     print("Generating patched font at:", out_path)
     font.generate(out_path)
     print("Font cache update...")
-    os.system("fc-cache -f")
+    subprocess.run(["fc-cache", "-f"], check=True)
     print("Done patching font!")
 
 if __name__ == "__main__":
