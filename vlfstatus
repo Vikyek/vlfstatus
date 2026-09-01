@@ -32,7 +32,9 @@ while true; do
 	}
 	source ~/.config/vlfstatus/config 2>/dev/null
 
-	DATETIME=$(date +"%d %a %H:%M:%S")
+	# ⚡ Bolt Optimization: Use bash built-ins for date formatting and reading files.
+	# Avoids expensive fork/exec of `date` and `cat` subprocesses every second.
+	printf -v DATETIME "%(%d %a %H:%M:%S)T" -1
 	WIFI_RAW=$(nmcli dev show wlp8s0 2>/dev/null | grep "GENERAL.CONNECTION" | sed -e "s/^GENERAL.CONNECTION:[ \t]*//")
 	if [[ "$WIFI_RAW" == "--" || -z "$WIFI_RAW" ]]; then
 		WIFI_ICON="󰤮 "
@@ -50,8 +52,8 @@ while true; do
 		WIFI_TEXT="${WIFI_TEXT//\"/\\\"}"
 	fi
 	
-	CAP=$(cat /sys/class/power_supply/BAT0/capacity 2>/dev/null || echo 100)
-	BAT_STATUS=$(cat /sys/class/power_supply/BAT0/status 2>/dev/null || echo "Unknown")
+	read -r CAP 2>/dev/null < /sys/class/power_supply/BAT0/capacity || CAP=100
+	read -r BAT_STATUS 2>/dev/null < /sys/class/power_supply/BAT0/status || BAT_STATUS="Unknown"
 	if [[ "$BAT_STATUS" == "Charging" ]]; then
 		CAP_ICON="󰂄 "
 		COLOR_BAT=$COLOR_BAT_HIGH
@@ -95,7 +97,7 @@ while true; do
 		fi
 
 		if [ $LAST_NUM_ACCOUNTS -gt 0 ]; then
-			NOW=$(date +%s)
+			NOW=$EPOCHSECONDS
 			MULTI_ACCOUNT_MODE=${MULTI_ACCOUNT_MODE:-"combine"}
 			
 			REFRESH_TXT=""
@@ -235,10 +237,17 @@ while true; do
 	MUTE_STATUS=$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null | awk '{print $2}')
 	VOL_RAW=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | grep -Po '[0-9]+(?=%)' | head -n1)
 	if [ -n "$VOL_RAW" ]; then
-		if [ "$MUTE_STATUS" = "yes" ]; then
+		if [ "$MUTE_STATUS" = "yes" ] || [ "$VOL_RAW" -eq 0 ]; then
 			VOL_INDICATOR=" <span color='$COLOR_BAT_LOW'>󰝟 </span><span color='$COLOR_TEXT'>mute</span>"
 		else
-			VOL_INDICATOR=" <span color='$COLOR_TIME'> </span><span color='$COLOR_TEXT'>${VOL_RAW}%</span>"
+			if [ "$VOL_RAW" -gt 66 ]; then
+				VOL_ICON=" "
+			elif [ "$VOL_RAW" -gt 33 ]; then
+				VOL_ICON=" "
+			else
+				VOL_ICON=" "
+			fi
+			VOL_INDICATOR=" <span color='$COLOR_TIME'>${VOL_ICON}</span><span color='$COLOR_TEXT'>${VOL_RAW}%</span>"
 		fi
 	fi
 
