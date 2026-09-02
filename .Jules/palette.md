@@ -4,3 +4,6 @@
 ## 2026-09-01 - Dynamic Volume Icons for Status Bar
 **Learning:** For continuous numeric readouts (like volume levels), users benefit from discrete visual cues representing varying magnitude thresholds (high, medium, low) rather than a single static icon.
 **Action:** When displaying system or environment values (e.g., volume, battery, brightness), check if existing single icons can be split into multi-state icons to improve scannability without relying solely on the text readout.
+## 2026-09-02 - Preserve Contextual Values Behind States
+**Learning:** Hiding continuous values (like volume percentage) when entering a binary override state (like muted) creates user anxiety, as they lose context of what will happen when the state is toggled off.
+**Action:** Always maintain the display of underlying numeric or continuous state values even when a binary override state is active.
