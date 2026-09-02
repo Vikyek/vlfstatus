@@ -253,6 +253,9 @@ while true; do
 
 	# Active App Indicators
 	APP_INDICATORS=""
+	if systemctl --user is-active --quiet jules-listener.service 2>/dev/null; then
+		APP_INDICATORS="$APP_INDICATORS <span color='#FFD700'>󱚝</span>"
+	fi
 	if pgrep -f gitkraken >/dev/null 2>&1; then
 		APP_INDICATORS="$APP_INDICATORS <span color='#179287'></span>"
 	fi
