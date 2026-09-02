@@ -7,3 +7,8 @@
 **Vulnerability:** A script `patch_font.py` used `os.system("fc-cache -f")` to refresh the font cache.
 **Learning:** Using `os.system` executes commands in a shell environment, which leaves the script vulnerable to shell injection if any user input or variables are ever introduced, and relies on the shell's behavior which is generally insecure.
 **Prevention:** Always use `subprocess.run` with a list of arguments (e.g., `["fc-cache", "-f"]`) to execute external commands directly without spawning a shell.
+
+## 2026-09-02 - Removed Hardcoded Google Client Secret
+**Vulnerability:** A hardcoded Google API `client_secret` was present in `fetch_quota.py`. Hardcoded credentials can easily be leaked if the repository becomes public or is accessed by unauthorized users, granting them unauthorized access to the Google API using the application's identity.
+**Learning:** Hardcoding sensitive information such as API keys and secrets directly in the source code exposes them to significant security risks, especially in scripts distributed or committed to version control.
+**Prevention:** Always load sensitive credentials from secure sources such as environment variables (e.g., `os.environ.get`), secure configuration files, or secret management services instead of hardcoding them in the codebase.
