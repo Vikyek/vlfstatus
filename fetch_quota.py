@@ -10,7 +10,12 @@ import tempfile
 def refresh_token(ref_token):
     url = "https://oauth2.googleapis.com/token"
     client_id = "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
-    client_secret = "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"
+
+    # SECURITY: Do not hardcode secrets
+    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    if not client_secret:
+        raise ValueError("Missing GOOGLE_CLIENT_SECRET environment variable")
+
     data = urllib.parse.urlencode({
         "client_id": client_id,
         "client_secret": client_secret,
