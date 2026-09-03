@@ -55,18 +55,38 @@ while true; do
 	read -r CAP 2>/dev/null < /sys/class/power_supply/BAT0/capacity || CAP=100
 	read -r BAT_STATUS 2>/dev/null < /sys/class/power_supply/BAT0/status || BAT_STATUS="Unknown"
 	if [[ "$BAT_STATUS" == "Charging" ]]; then
-		CAP_ICON="󰂄 "
+		if [[ $CAP -gt 95 ]]; then
+			CAP_ICON="󰂅 "
+		elif [[ $CAP -gt 90 ]]; then
+			CAP_ICON="󰂋 "
+		elif [[ $CAP -gt 80 ]]; then
+			CAP_ICON="󰂊 "
+		elif [[ $CAP -gt 70 ]]; then
+			CAP_ICON="󰢞 "
+		elif [[ $CAP -gt 60 ]]; then
+			CAP_ICON="󰂉 "
+		elif [[ $CAP -gt 50 ]]; then
+			CAP_ICON="󰢝 "
+		elif [[ $CAP -gt 40 ]]; then
+			CAP_ICON="󰂈 "
+		elif [[ $CAP -gt 30 ]]; then
+			CAP_ICON="󰂇 "
+		elif [[ $CAP -gt 20 ]]; then
+			CAP_ICON="󰂆 "
+		else
+			CAP_ICON="󰢜 "
+		fi
 		COLOR_BAT=$COLOR_BAT_HIGH
-	elif [[ ((CAP -gt 74)) ]]; then
+	elif [[ $CAP -gt 74 ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_HIGH
-	elif [[ ((CAP -gt 49)) ]]; then
+	elif [[ $CAP -gt 49 ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_HIGH
-	elif [[ ((CAP -gt 24)) ]]; then
+	elif [[ $CAP -gt 24 ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_MID
-	elif [[ ((CAP -gt 10)) ]]; then
+	elif [[ $CAP -gt 10 ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_LOW
 	else
