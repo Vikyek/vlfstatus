@@ -176,8 +176,9 @@ while true; do
 				QUOTA_TEXT="$QUOTA_TEXT${REFRESH_TXT}"
 			else
 				# Combined mode
-				TOTAL_G=0
-				TOTAL_C=0
+				# ⚡ Bolt Optimization: Batch awk floating-point math evaluation outside the loop to avoid multiple expensive fork/exec calls per account.
+				TOTAL_G_EXPR="0"
+				TOTAL_C_EXPR="0"
 				MIN_G_EPOCH=99999999999
 				MIN_C_EPOCH=99999999999
 
@@ -205,8 +206,8 @@ while true; do
 						C_EPOCH="${C_5H_EPOCH_ARR[$i]}"
 					fi
 
-					TOTAL_G=$(awk "BEGIN {print $TOTAL_G + ${G5H:-0}}")
-					TOTAL_C=$(awk "BEGIN {print $TOTAL_C + ${C5H:-0}}")
+					TOTAL_G_EXPR="$TOTAL_G_EXPR + ${G5H:-0}"
+					TOTAL_C_EXPR="$TOTAL_C_EXPR + ${C5H:-0}"
 
 					# Only consider epochs > 0
 					if [ -n "$G_EPOCH" ] && [ "$G_EPOCH" -gt 0 ] && [ "$G_EPOCH" -lt "$MIN_G_EPOCH" ]; then
@@ -216,6 +217,9 @@ while true; do
 						MIN_C_EPOCH=$C_EPOCH
 					fi
 				done
+
+				TOTAL_G=$(awk "BEGIN {print $TOTAL_G_EXPR}")
+				TOTAL_C=$(awk "BEGIN {print $TOTAL_C_EXPR}")
 
 				G_RESET="N/A"
 				if [ "$MIN_G_EPOCH" -ne 99999999999 ]; then
