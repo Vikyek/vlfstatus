@@ -12,3 +12,8 @@
 **Vulnerability:** A hardcoded Google API `client_secret` was present in `fetch_quota.py`. Hardcoded credentials can easily be leaked if the repository becomes public or is accessed by unauthorized users, granting them unauthorized access to the Google API using the application's identity.
 **Learning:** Hardcoding sensitive information such as API keys and secrets directly in the source code exposes them to significant security risks, especially in scripts distributed or committed to version control.
 **Prevention:** Always load sensitive credentials from secure sources such as environment variables (e.g., `os.environ.get`), secure configuration files, or secret management services instead of hardcoding them in the codebase.
+
+## 2026-09-03 - Strip Control Characters from External Input
+**Vulnerability:** Untrusted external input (such as Wi-Fi SSIDs from `nmcli`) was inserted into JSON strings without stripping control characters. While standard special characters like `<` and `"` were escaped, literal control characters like newlines (`\n`), carriage returns (`\r`), or ANSI escape codes (`\e`) can break the JSON parser in the window manager (e.g. i3bar or swaybar), causing a Denial of Service.
+**Learning:** JSON specifications require control characters to be escaped. Failing to handle them allows attackers to crash downstream consumers of the JSON payload.
+**Prevention:** Always strip or escape control characters (e.g., using `VAR="${VAR//[[:cntrl:]]/}"`) when inserting untrusted input into structured formats like JSON.
