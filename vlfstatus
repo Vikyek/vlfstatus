@@ -57,18 +57,38 @@ while true; do
 	read -r CAP 2>/dev/null < /sys/class/power_supply/BAT0/capacity || CAP=100
 	read -r BAT_STATUS 2>/dev/null < /sys/class/power_supply/BAT0/status || BAT_STATUS="Unknown"
 	if [[ "$BAT_STATUS" == "Charging" ]]; then
-		CAP_ICON="󰂄 "
+		if [[ $CAP -gt 95 ]]; then
+			CAP_ICON="󰂅 "
+		elif [[ $CAP -gt 90 ]]; then
+			CAP_ICON="󰂋 "
+		elif [[ $CAP -gt 80 ]]; then
+			CAP_ICON="󰂊 "
+		elif [[ $CAP -gt 70 ]]; then
+			CAP_ICON="󰢞 "
+		elif [[ $CAP -gt 60 ]]; then
+			CAP_ICON="󰂉 "
+		elif [[ $CAP -gt 50 ]]; then
+			CAP_ICON="󰢝 "
+		elif [[ $CAP -gt 40 ]]; then
+			CAP_ICON="󰂈 "
+		elif [[ $CAP -gt 30 ]]; then
+			CAP_ICON="󰂇 "
+		elif [[ $CAP -gt 20 ]]; then
+			CAP_ICON="󰂆 "
+		else
+			CAP_ICON="󰢜 "
+		fi
 		COLOR_BAT=$COLOR_BAT_HIGH
-	elif [[ ((CAP -gt 74)) ]]; then
+	elif [[ $CAP -gt 74 ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_HIGH
-	elif [[ ((CAP -gt 49)) ]]; then
+	elif [[ $CAP -gt 49 ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_HIGH
-	elif [[ ((CAP -gt 24)) ]]; then
+	elif [[ $CAP -gt 24 ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_MID
-	elif [[ ((CAP -gt 10)) ]]; then
+	elif [[ $CAP -gt 10 ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_LOW
 	else
@@ -178,8 +198,9 @@ while true; do
 				QUOTA_TEXT="$QUOTA_TEXT${REFRESH_TXT}"
 			else
 				# Combined mode
-				TOTAL_G=0
-				TOTAL_C=0
+				# ⚡ Bolt Optimization: Batch awk floating-point math evaluation outside the loop to avoid multiple expensive fork/exec calls per account.
+				TOTAL_G_EXPR="0"
+				TOTAL_C_EXPR="0"
 				MIN_G_EPOCH=99999999999
 				MIN_C_EPOCH=99999999999
 
@@ -207,8 +228,8 @@ while true; do
 						C_EPOCH="${C_5H_EPOCH_ARR[$i]}"
 					fi
 
-					TOTAL_G=$(awk "BEGIN {print $TOTAL_G + ${G5H:-0}}")
-					TOTAL_C=$(awk "BEGIN {print $TOTAL_C + ${C5H:-0}}")
+					TOTAL_G_EXPR="$TOTAL_G_EXPR + ${G5H:-0}"
+					TOTAL_C_EXPR="$TOTAL_C_EXPR + ${C5H:-0}"
 
 					# Only consider epochs > 0
 					if [ -n "$G_EPOCH" ] && [ "$G_EPOCH" -gt 0 ] && [ "$G_EPOCH" -lt "$MIN_G_EPOCH" ]; then
@@ -218,6 +239,9 @@ while true; do
 						MIN_C_EPOCH=$C_EPOCH
 					fi
 				done
+
+				TOTAL_G=$(awk "BEGIN {print $TOTAL_G_EXPR}")
+				TOTAL_C=$(awk "BEGIN {print $TOTAL_C_EXPR}")
 
 				G_RESET="N/A"
 				if [ "$MIN_G_EPOCH" -ne 99999999999 ]; then
