@@ -25,8 +25,8 @@ class TestVlfstatus(unittest.TestCase):
 
     def test_fetch_quota_definitions(self):
         """Verify core functions are defined in fetch_quota."""
-        self.assertTrue(hasattr(fetch_quota, 'get_ref_tokens'))
-        self.assertTrue(hasattr(fetch_quota, 'fetch_quota_summary'))
+        self.assertTrue(hasattr(fetch_quota, 'get_client_secret'))
+        self.assertTrue(hasattr(fetch_quota, 'fetch_quota_from_agy_cli'))
         self.assertTrue(hasattr(fetch_quota, 'refresh_token'))
 
 if __name__ == '__main__':
