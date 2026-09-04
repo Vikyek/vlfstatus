@@ -164,23 +164,11 @@ while true; do
 					C_5H="${C_5H_ARR[$i]}"
 					C_WK="${C_WK_ARR[$i]}"
 
-					G_WK_INT=${G_WK%.*}
-					if [ -z "$G_WK_INT" ] || [ "$G_WK_INT" -eq 0 ]; then
-						G5H="$G_WK"
-						G_EPOCH="${G_WK_EPOCH_ARR[$i]}"
-					else
-						G5H="$G_5H"
-						G_EPOCH="${G_5H_EPOCH_ARR[$i]}"
-					fi
+					G5H="${G_5H:-$G_WK}"
+					G_EPOCH="${G_5H_EPOCH_ARR[$i]:-${G_WK_EPOCH_ARR[$i]}}"
 
-					C_WK_INT=${C_WK%.*}
-					if [ -z "$C_WK_INT" ] || [ "$C_WK_INT" -eq 0 ]; then
-						C5H="$C_WK"
-						C_EPOCH="${C_WK_EPOCH_ARR[$i]}"
-					else
-						C5H="$C_5H"
-						C_EPOCH="${C_5H_EPOCH_ARR[$i]}"
-					fi
+					C5H="${C_5H:-$C_WK}"
+					C_EPOCH="${C_5H_EPOCH_ARR[$i]:-${C_WK_EPOCH_ARR[$i]}}"
 
 					G_RESET="N/A"
 					if [ -n "$G_EPOCH" ] && [ "$G_EPOCH" -gt 0 ]; then
@@ -210,23 +198,11 @@ while true; do
 					C_5H="${C_5H_ARR[$i]}"
 					C_WK="${C_WK_ARR[$i]}"
 
-					G_WK_INT=${G_WK%.*}
-					if [ -z "$G_WK_INT" ] || [ "$G_WK_INT" -eq 0 ]; then
-						G5H="$G_WK"
-						G_EPOCH="${G_WK_EPOCH_ARR[$i]}"
-					else
-						G5H="$G_5H"
-						G_EPOCH="${G_5H_EPOCH_ARR[$i]}"
-					fi
+					G5H="${G_5H:-$G_WK}"
+					G_EPOCH="${G_5H_EPOCH_ARR[$i]:-${G_WK_EPOCH_ARR[$i]}}"
 
-					C_WK_INT=${C_WK%.*}
-					if [ -z "$C_WK_INT" ] || [ "$C_WK_INT" -eq 0 ]; then
-						C5H="$C_WK"
-						C_EPOCH="${C_WK_EPOCH_ARR[$i]}"
-					else
-						C5H="$C_5H"
-						C_EPOCH="${C_5H_EPOCH_ARR[$i]}"
-					fi
+					C5H="${C_5H:-$C_WK}"
+					C_EPOCH="${C_5H_EPOCH_ARR[$i]:-${C_WK_EPOCH_ARR[$i]}}"
 
 					TOTAL_G_EXPR="$TOTAL_G_EXPR + ${G5H:-0}"
 					TOTAL_C_EXPR="$TOTAL_C_EXPR + ${C5H:-0}"
