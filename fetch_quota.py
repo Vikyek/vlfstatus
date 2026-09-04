@@ -52,66 +52,13 @@ def refresh_token(ref_token):
         res = json.loads(resp.read().decode("utf-8"))
         return res["access_token"], int(res.get("expires_in", 3600))
 
-def get_account_items():
-    items = []
-    seen_tokens = set()
-    try:
-        path = os.path.expanduser("~/.config/opencode/antigravity-accounts.json")
-        if os.path.exists(path):
-            with open(path, "r") as f:
-                data = json.load(f)
-                accounts = data.get("accounts", [])
-                active_idx = data.get("activeIndex", 0)
-                if 0 <= active_idx < len(accounts):
-                    acc = accounts[active_idx]
-                    rf = acc.get("refreshToken")
-                    pid = acc.get("projectId")
-                    em = acc.get("email")
-                    if rf:
-                        return [{"refreshToken": rf, "projectId": pid, "email": em}]
-                for acc in accounts:
-                    rf = acc.get("refreshToken")
-                    pid = acc.get("projectId")
-                    em = acc.get("email")
-                    if rf and rf not in seen_tokens:
-                        seen_tokens.add(rf)
-                        items.append({"refreshToken": rf, "projectId": pid, "email": em})
-                        break
-    except Exception:
-        pass
-
-    if items:
-        return items[:1]
-
-    try:
-        connection = secretstorage.dbus_init()
-        collections = list(secretstorage.get_all_collections(connection))
-        for collection in collections:
-            for item in collection.get_all_items():
-                attrs = item.get_attributes()
-                if attrs.get('service') == 'gemini' and attrs.get('username') == 'antigravity':
-                    secret_data = json.loads(item.get_secret().decode('utf-8', errors='ignore'))
-                    rf = secret_data.get("token", {}).get("refresh_token")
-                    pid = secret_data.get("projectId") or secret_data.get("project_id")
-                    em = secret_data.get("email")
-                    if rf and rf not in seen_tokens:
-                        seen_tokens.add(rf)
-                        items.append({"refreshToken": rf, "projectId": pid, "email": em})
-                        break
-    except Exception:
-        pass
-    return items[:1]
-
-def get_ref_tokens():
-    return [item["refreshToken"] for item in get_account_items()]
-
 def fetch_quota_from_agy_cli():
     try:
         res = subprocess.run(
             ["agy", "-p", "/quota", "--output-format", "json"],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=20
         )
         if res.returncode != 0 or not res.stdout.strip():
             return None
@@ -156,48 +103,6 @@ def fetch_quota_from_agy_cli():
     except Exception:
         return None
 
-def fetch_quota_summary(token, project_id=None):
-    url = "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary"
-    data = json.dumps({"project": project_id}).encode("utf-8") if project_id else b"{}"
-    req = urllib.request.Request(
-        url,
-        data=data,
-        headers={
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-            "User-Agent": "antigravity"
-        },
-        method="POST"
-    )
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        return json.loads(resp.read().decode("utf-8"))
-
-def load_cached_token(cache_path):
-    if not os.path.exists(cache_path):
-        return None, 0
-    try:
-        with open(cache_path, "r") as f:
-            data = json.load(f)
-            expiry = data.get("expiry_seconds", 0)
-            if expiry > time.time() + 60:
-                return data.get("access_token"), expiry
-    except Exception:
-        pass
-    return None, 0
-
-def save_cached_token(cache_path, token, expires_in):
-    try:
-        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-        data = {
-            "access_token": token,
-            "expiry_seconds": int(time.time() + expires_in)
-        }
-        with open(os.open(cache_path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600), "w") as f:
-            json.dump(data, f)
-    except Exception:
-        pass
-
 def write_output_json(out_path, data):
     dir_name = os.path.dirname(out_path)
     os.makedirs(dir_name, exist_ok=True)
@@ -215,115 +120,29 @@ def main():
     out_path = os.path.expanduser("~/.cache/agy_quota.json")
     
     while True:
-        current_data = {}
-        if os.path.exists(out_path):
-            try:
-                with open(out_path, "r") as f:
-                    current_data = json.load(f)
-            except Exception:
-                pass
-
         try:
-            # 1. Try fetching directly via native agy CLI
+            current_data = {}
+            if os.path.exists(out_path):
+                try:
+                    with open(out_path, "r") as f:
+                        current_data = json.load(f)
+                except Exception:
+                    pass
+
+            # 1. Primary: fetch via agy CLI
             acc_output = fetch_quota_from_agy_cli()
             if acc_output:
                 output = {"accounts": [acc_output], "last_updated_epoch": int(time.time())}
                 write_output_json(out_path, output)
-                time.sleep(60)
-                continue
-
-            # 2. Fallback to API queries
-            acc_items = get_account_items()
-            if not acc_items:
-                raise Exception("No accounts available")
-            
-            output = {"accounts": []}
-            seen_emails = set()
-
-            for idx, acc_info in enumerate(acc_items):
-                ref_token = acc_info["refreshToken"]
-                project_id = acc_info.get("projectId")
-                email = acc_info.get("email")
-
-                token_hash = hashlib.sha256(ref_token.encode('utf-8')).hexdigest()[:16]
-                cache_path = os.path.join(cache_dir, f"antigravity-auth-{token_hash}.json")
-
-                try:
-                    token, expiry = load_cached_token(cache_path)
-                    if not token:
-                        token, expires_in = refresh_token(ref_token)
-                        save_cached_token(cache_path, token, expires_in)
-
-                    if not email:
-                        try:
-                            u_req = urllib.request.Request(
-                                "https://www.googleapis.com/oauth2/v1/userinfo",
-                                headers={"Authorization": f"Bearer {token}"}
-                            )
-                            with urllib.request.urlopen(u_req, timeout=5) as u_resp:
-                                u_info = json.loads(u_resp.read().decode("utf-8"))
-                                email = u_info.get("email")
-                        except Exception:
-                            pass
-
-                    if email:
-                        if email in seen_emails:
-                            continue
-                        seen_emails.add(email)
-
-                    try:
-                        summary = fetch_quota_summary(token, project_id=project_id)
-                    except urllib.error.HTTPError as e:
-                        if e.code == 403 and not project_id:
-                            summary = fetch_quota_summary(token, project_id="aicode-consumers")
-                        else:
-                            raise
-                    
-                    acc_output = {"email": email} if email else {}
-                    for group in summary.get("groups", []):
-                        disp_name = group.get("displayName", "")
-                        prefix = "gemini" if "Gemini" in disp_name else "claude"
-                        for bucket in group.get("buckets", []):
-                            window = bucket.get("window", "")
-                            suffix = "5h" if window == "5h" else "weekly"
-                            rem_frac = bucket.get("remainingFraction", 0.0)
-                            rem_pct = round(rem_frac * 100, 1)
-
-                            reset_time = bucket.get("resetTime", "")
-                            reset_epoch = 0
-                            if reset_time:
-                                try:
-                                    rt = datetime.fromisoformat(reset_time.replace("Z", "+00:00"))
-                                    reset_epoch = int(rt.timestamp())
-                                except Exception:
-                                    pass
-
-                            acc_output[f"{prefix}_{suffix}"] = f"{rem_pct}%"
-                            acc_output[f"{prefix}_{suffix}_reset_epoch"] = reset_epoch
-
-                    for prefix in ("gemini", "claude"):
-                        if f"{prefix}_5h" not in acc_output and f"{prefix}_weekly" in acc_output:
-                            acc_output[f"{prefix}_5h"] = acc_output[f"{prefix}_weekly"]
-                            acc_output[f"{prefix}_5h_reset_epoch"] = acc_output.get(f"{prefix}_weekly_reset_epoch", 0)
-                        if f"{prefix}_weekly" not in acc_output and f"{prefix}_5h" in acc_output:
-                            acc_output[f"{prefix}_weekly"] = acc_output[f"{prefix}_5h"]
-                            acc_output[f"{prefix}_weekly_reset_epoch"] = acc_output.get(f"{prefix}_5h_reset_epoch", 0)
-                    
-                    output["accounts"].append(acc_output)
-                except Exception:
-                    pass
-            
-            output["last_updated_epoch"] = int(time.time())
-            write_output_json(out_path, output)
-            
-        except Exception:
-            if current_data:
-                current_data["last_updated_epoch"] = int(time.time())
-                write_output_json(out_path, current_data)
             else:
-                write_output_json(out_path, {"last_updated_epoch": int(time.time())})
-            
-        time.sleep(60)
+                # Keep existing data alive if fetch failed temporarily
+                if current_data:
+                    current_data["last_updated_epoch"] = int(time.time())
+                    write_output_json(out_path, current_data)
+        except Exception:
+            pass
+
+        time.sleep(30)
 
 if __name__ == "__main__":
     main()
