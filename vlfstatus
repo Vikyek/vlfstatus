@@ -42,9 +42,11 @@ while true; do
 	else
 		WIFI_ICON="󰖩 "
 		WIFI_TEXT="$WIFI_RAW"
-		# Sanitize WIFI_TEXT to prevent JSON and Pango injection
+		# SECURITY: Sanitize WIFI_TEXT to prevent JSON and Pango injection.
+		# Specifically strip control characters which could break JSON output and crash the window manager.
 		# Handle bash 5.2+ patsub_replacement if enabled
 		shopt -u patsub_replacement 2>/dev/null || true
+		WIFI_TEXT="${WIFI_TEXT//[[:cntrl:]]/}"
 		WIFI_TEXT="${WIFI_TEXT//\\/\\\\}"
 		WIFI_TEXT="${WIFI_TEXT//&/&amp;}"
 		WIFI_TEXT="${WIFI_TEXT//</&lt;}"
