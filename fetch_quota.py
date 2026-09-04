@@ -7,6 +7,7 @@ import time
 import os
 import tempfile
 import hashlib
+import subprocess
 from datetime import datetime
 
 def get_client_secret():
@@ -59,15 +60,28 @@ def get_account_items():
         if os.path.exists(path):
             with open(path, "r") as f:
                 data = json.load(f)
-                for acc in data.get("accounts", []):
+                accounts = data.get("accounts", [])
+                active_idx = data.get("activeIndex", 0)
+                if 0 <= active_idx < len(accounts):
+                    acc = accounts[active_idx]
+                    rf = acc.get("refreshToken")
+                    pid = acc.get("projectId")
+                    em = acc.get("email")
+                    if rf:
+                        return [{"refreshToken": rf, "projectId": pid, "email": em}]
+                for acc in accounts:
                     rf = acc.get("refreshToken")
                     pid = acc.get("projectId")
                     em = acc.get("email")
                     if rf and rf not in seen_tokens:
                         seen_tokens.add(rf)
                         items.append({"refreshToken": rf, "projectId": pid, "email": em})
+                        break
     except Exception:
         pass
+
+    if items:
+        return items[:1]
 
     try:
         connection = secretstorage.dbus_init()
@@ -83,12 +97,81 @@ def get_account_items():
                     if rf and rf not in seen_tokens:
                         seen_tokens.add(rf)
                         items.append({"refreshToken": rf, "projectId": pid, "email": em})
+                        break
     except Exception:
         pass
-    return items
+    return items[:1]
 
 def get_ref_tokens():
     return [item["refreshToken"] for item in get_account_items()]
+
+def fetch_quota_from_agy_cli():
+    try:
+        res = subprocess.run(
+            ["agy", "-p", "/quota", "--output-format", "json"],
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        if res.returncode != 0 or not res.stdout.strip():
+            return None
+
+        data = json.loads(res.stdout)
+        usage_data = data.get("command", {}).get("data", {})
+        groups = usage_data.get("groups", [])
+        if not groups:
+            return None
+
+        acc_output = {}
+        for group in groups:
+            disp_name = group.get("name", "")
+            prefix = "gemini" if "Gemini" in disp_name else "claude"
+            for bucket in group.get("buckets", []):
+                window = bucket.get("window", "")
+                suffix = "5h" if window == "5h" else "weekly"
+                rem_frac = bucket.get("remaining_fraction", 0.0)
+                rem_pct = round(rem_frac * 100, 1)
+
+                reset_time = bucket.get("reset_time", "")
+                reset_epoch = 0
+                if reset_time:
+                    try:
+                        rt = datetime.fromisoformat(reset_time.replace("Z", "+00:00"))
+                        reset_epoch = int(rt.timestamp())
+                    except Exception:
+                        pass
+
+                acc_output[f"{prefix}_{suffix}"] = f"{rem_pct}%"
+                acc_output[f"{prefix}_{suffix}_reset_epoch"] = reset_epoch
+
+        for prefix in ("gemini", "claude"):
+            if f"{prefix}_5h" not in acc_output and f"{prefix}_weekly" in acc_output:
+                acc_output[f"{prefix}_5h"] = acc_output[f"{prefix}_weekly"]
+                acc_output[f"{prefix}_5h_reset_epoch"] = acc_output.get(f"{prefix}_weekly_reset_epoch", 0)
+            if f"{prefix}_weekly" not in acc_output and f"{prefix}_5h" in acc_output:
+                acc_output[f"{prefix}_weekly"] = acc_output[f"{prefix}_5h"]
+                acc_output[f"{prefix}_weekly_reset_epoch"] = acc_output.get(f"{prefix}_5h_reset_epoch", 0)
+
+        return acc_output
+    except Exception:
+        return None
+
+def fetch_quota_summary(token, project_id=None):
+    url = "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary"
+    data = json.dumps({"project": project_id}).encode("utf-8") if project_id else b"{}"
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "User-Agent": "antigravity"
+        },
+        method="POST"
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        return json.loads(resp.read().decode("utf-8"))
 
 def load_cached_token(cache_path):
     if not os.path.exists(cache_path):
@@ -114,23 +197,6 @@ def save_cached_token(cache_path, token, expires_in):
             json.dump(data, f)
     except Exception:
         pass
-
-def fetch_quota_summary(token, project_id=None):
-    url = "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary"
-    data = json.dumps({"project": project_id}).encode("utf-8") if project_id else b"{}"
-    req = urllib.request.Request(
-        url,
-        data=data,
-        headers={
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-            "User-Agent": "antigravity"
-        },
-        method="POST"
-    )
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        return json.loads(resp.read().decode("utf-8"))
 
 def write_output_json(out_path, data):
     dir_name = os.path.dirname(out_path)
@@ -158,6 +224,15 @@ def main():
                 pass
 
         try:
+            # 1. Try fetching directly via native agy CLI
+            acc_output = fetch_quota_from_agy_cli()
+            if acc_output:
+                output = {"accounts": [acc_output], "last_updated_epoch": int(time.time())}
+                write_output_json(out_path, output)
+                time.sleep(60)
+                continue
+
+            # 2. Fallback to API queries
             acc_items = get_account_items()
             if not acc_items:
                 raise Exception("No accounts available")
@@ -168,6 +243,7 @@ def main():
             for idx, acc_info in enumerate(acc_items):
                 ref_token = acc_info["refreshToken"]
                 project_id = acc_info.get("projectId")
+                email = acc_info.get("email")
 
                 token_hash = hashlib.sha256(ref_token.encode('utf-8')).hexdigest()[:16]
                 cache_path = os.path.join(cache_dir, f"antigravity-auth-{token_hash}.json")
@@ -178,7 +254,6 @@ def main():
                         token, expires_in = refresh_token(ref_token)
                         save_cached_token(cache_path, token, expires_in)
 
-                    email = acc_info.get("email")
                     if not email:
                         try:
                             u_req = urllib.request.Request(
@@ -225,10 +300,18 @@ def main():
 
                             acc_output[f"{prefix}_{suffix}"] = f"{rem_pct}%"
                             acc_output[f"{prefix}_{suffix}_reset_epoch"] = reset_epoch
+
+                    for prefix in ("gemini", "claude"):
+                        if f"{prefix}_5h" not in acc_output and f"{prefix}_weekly" in acc_output:
+                            acc_output[f"{prefix}_5h"] = acc_output[f"{prefix}_weekly"]
+                            acc_output[f"{prefix}_5h_reset_epoch"] = acc_output.get(f"{prefix}_weekly_reset_epoch", 0)
+                        if f"{prefix}_weekly" not in acc_output and f"{prefix}_5h" in acc_output:
+                            acc_output[f"{prefix}_weekly"] = acc_output[f"{prefix}_5h"]
+                            acc_output[f"{prefix}_weekly_reset_epoch"] = acc_output.get(f"{prefix}_5h_reset_epoch", 0)
                     
                     output["accounts"].append(acc_output)
-                except Exception as e:
-                    pass # Skip failing tokens
+                except Exception:
+                    pass
             
             output["last_updated_epoch"] = int(time.time())
             write_output_json(out_path, output)
