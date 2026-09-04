@@ -5,3 +5,7 @@
 ## 2026-09-02 - Bash ANSI color pattern
 **Learning:** `install.sh` has a reusable Bash script ANSI escape pattern that respects the `NO_COLOR` environment variable and `isatty()` (`[ -t 1 ]`).
 **Action:** Use this standard pattern to enforce `NO_COLOR` compliant console output in Bash scripts in this repository.
+
+## 2026-10-24 - Handling Missing Dependencies
+**Learning:** Raw stack traces from `ImportError` exceptions cause console clutter and confuse users who might not understand the difference between an unhandled code bug and an expected missing environment requirement.
+**Action:** When a tool relies on standard but optional external python dependencies (e.g. `fontforge`), wrap the initial import in a `try/except` block, suppress the raw traceback, and use standard error formatting (routed to `stderr`) to instruct the user on how to install the dependency.
