@@ -6,15 +6,39 @@ import urllib.error
 import time
 import os
 import tempfile
+import hashlib
+from datetime import datetime
+
+def get_client_secret():
+    secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    if secret:
+        return secret
+    
+    env_paths = [
+        os.path.expanduser("~/.gemini/config/.vault_credentials.env"),
+        os.path.expanduser("~/.config/vlfstatus/credentials.env")
+    ]
+    for env_path in env_paths:
+        if os.path.exists(env_path):
+            try:
+                with open(env_path, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("GOOGLE_CLIENT_SECRET="):
+                            val = line.split("=", 1)[1].strip("\"'")
+                            if val:
+                                return val
+            except Exception:
+                pass
+    return None
 
 def refresh_token(ref_token):
     url = "https://oauth2.googleapis.com/token"
     client_id = "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
 
-    # SECURITY: Do not hardcode secrets
-    client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    client_secret = get_client_secret()
     if not client_secret:
-        raise ValueError("Missing GOOGLE_CLIENT_SECRET environment variable")
+        raise ValueError("Missing GOOGLE_CLIENT_SECRET in environment or vault credentials")
 
     data = urllib.parse.urlencode({
         "client_id": client_id,
@@ -27,18 +51,21 @@ def refresh_token(ref_token):
         res = json.loads(resp.read().decode("utf-8"))
         return res["access_token"], int(res.get("expires_in", 3600))
 
-def get_ref_tokens():
-    tokens = []
+def get_account_items():
+    items = []
+    seen_tokens = set()
     try:
         path = os.path.expanduser("~/.config/opencode/antigravity-accounts.json")
         if os.path.exists(path):
             with open(path, "r") as f:
                 data = json.load(f)
-                accounts = data.get("accounts", [])
-                for acc in accounts:
-                    ref_token = acc.get("refreshToken")
-                    if ref_token and ref_token not in tokens:
-                        tokens.append(ref_token)
+                for acc in data.get("accounts", []):
+                    rf = acc.get("refreshToken")
+                    pid = acc.get("projectId")
+                    em = acc.get("email")
+                    if rf and rf not in seen_tokens:
+                        seen_tokens.add(rf)
+                        items.append({"refreshToken": rf, "projectId": pid, "email": em})
     except Exception:
         pass
 
@@ -50,12 +77,18 @@ def get_ref_tokens():
                 attrs = item.get_attributes()
                 if attrs.get('service') == 'gemini' and attrs.get('username') == 'antigravity':
                     secret_data = json.loads(item.get_secret().decode('utf-8', errors='ignore'))
-                    ref_token = secret_data.get("token", {}).get("refresh_token")
-                    if ref_token and ref_token not in tokens:
-                        tokens.append(ref_token)
+                    rf = secret_data.get("token", {}).get("refresh_token")
+                    pid = secret_data.get("projectId") or secret_data.get("project_id")
+                    em = secret_data.get("email")
+                    if rf and rf not in seen_tokens:
+                        seen_tokens.add(rf)
+                        items.append({"refreshToken": rf, "projectId": pid, "email": em})
     except Exception:
         pass
-    return tokens
+    return items
+
+def get_ref_tokens():
+    return [item["refreshToken"] for item in get_account_items()]
 
 def load_cached_token(cache_path):
     if not os.path.exists(cache_path):
@@ -82,11 +115,12 @@ def save_cached_token(cache_path, token, expires_in):
     except Exception:
         pass
 
-def fetch_quota_summary(token):
+def fetch_quota_summary(token, project_id=None):
     url = "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary"
+    data = json.dumps({"project": project_id}).encode("utf-8") if project_id else b"{}"
     req = urllib.request.Request(
         url,
-        data=b"{}",
+        data=data,
         headers={
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -111,7 +145,6 @@ def write_output_json(out_path, data):
             os.remove(temp_path)
 
 def main():
-    import hashlib
     cache_dir = os.path.expanduser("~/.cache/token-conso")
     out_path = os.path.expanduser("~/.cache/agy_quota.json")
     
@@ -125,14 +158,17 @@ def main():
                 pass
 
         try:
-            ref_tokens = get_ref_tokens()
-            if not ref_tokens:
-                raise Exception("No refresh tokens available")
+            acc_items = get_account_items()
+            if not acc_items:
+                raise Exception("No accounts available")
             
             output = {"accounts": []}
+            seen_emails = set()
 
-            for idx, ref_token in enumerate(ref_tokens):
-                # Use a hash of the refresh token to create a unique cache path
+            for idx, acc_info in enumerate(acc_items):
+                ref_token = acc_info["refreshToken"]
+                project_id = acc_info.get("projectId")
+
                 token_hash = hashlib.sha256(ref_token.encode('utf-8')).hexdigest()[:16]
                 cache_path = os.path.join(cache_dir, f"antigravity-auth-{token_hash}.json")
 
@@ -142,9 +178,33 @@ def main():
                         token, expires_in = refresh_token(ref_token)
                         save_cached_token(cache_path, token, expires_in)
 
-                    summary = fetch_quota_summary(token)
+                    email = acc_info.get("email")
+                    if not email:
+                        try:
+                            u_req = urllib.request.Request(
+                                "https://www.googleapis.com/oauth2/v1/userinfo",
+                                headers={"Authorization": f"Bearer {token}"}
+                            )
+                            with urllib.request.urlopen(u_req, timeout=5) as u_resp:
+                                u_info = json.loads(u_resp.read().decode("utf-8"))
+                                email = u_info.get("email")
+                        except Exception:
+                            pass
+
+                    if email:
+                        if email in seen_emails:
+                            continue
+                        seen_emails.add(email)
+
+                    try:
+                        summary = fetch_quota_summary(token, project_id=project_id)
+                    except urllib.error.HTTPError as e:
+                        if e.code == 403 and not project_id:
+                            summary = fetch_quota_summary(token, project_id="aicode-consumers")
+                        else:
+                            raise
                     
-                    acc_output = {}
+                    acc_output = {"email": email} if email else {}
                     for group in summary.get("groups", []):
                         disp_name = group.get("displayName", "")
                         prefix = "gemini" if "Gemini" in disp_name else "claude"
@@ -157,7 +217,6 @@ def main():
                             reset_time = bucket.get("resetTime", "")
                             reset_epoch = 0
                             if reset_time:
-                                from datetime import datetime
                                 try:
                                     rt = datetime.fromisoformat(reset_time.replace("Z", "+00:00"))
                                     reset_epoch = int(rt.timestamp())

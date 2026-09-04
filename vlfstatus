@@ -240,8 +240,8 @@ while true; do
 					fi
 				done
 
-				TOTAL_G=$(awk "BEGIN {print $TOTAL_G_EXPR}")
-				TOTAL_C=$(awk "BEGIN {print $TOTAL_C_EXPR}")
+				TOTAL_G=$(awk "BEGIN {val=($TOTAL_G_EXPR)/$LAST_NUM_ACCOUNTS; if (val == int(val)) printf \"%d\", val; else printf \"%.1f\", val}")
+				TOTAL_C=$(awk "BEGIN {val=($TOTAL_C_EXPR)/$LAST_NUM_ACCOUNTS; if (val == int(val)) printf \"%d\", val; else printf \"%.1f\", val}")
 
 				G_RESET="N/A"
 				if [ "$MIN_G_EPOCH" -ne 99999999999 ]; then
