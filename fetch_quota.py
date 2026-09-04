@@ -54,11 +54,15 @@ def refresh_token(ref_token):
 
 def fetch_quota_from_agy_cli():
     try:
+        # Sanitize environment PATH to prevent untrusted execution
+        safe_env = os.environ.copy()
+        safe_env["PATH"] = "/usr/local/bin:/usr/bin:/bin"
         res = subprocess.run(
             ["agy", "-p", "/quota", "--output-format", "json"],
             capture_output=True,
             text=True,
-            timeout=20
+            timeout=20,
+            env=safe_env
         )
         if res.returncode != 0 or not res.stdout.strip():
             return None
