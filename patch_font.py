@@ -95,7 +95,7 @@ def patch():
     info(f"Generating patched font at: {C_BOLD}{out_path}{C_RESET}")
     font.generate(out_path)
     info("Updating font cache...")
-    subprocess.run(["fc-cache", "-f"], check=True)
+    subprocess.run(["/usr/bin/fc-cache", "-f"], check=True)
     print()
     success("Done patching font!")
     print()
