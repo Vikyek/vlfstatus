@@ -111,7 +111,7 @@ def fetch_quota_from_agy_cli():
             ["agy", "-p", "/quota", "--output-format", "json"],
             capture_output=True,
             text=True,
-            timeout=10
+            timeout=30
         )
         if res.returncode != 0 or not res.stdout.strip():
             return None
