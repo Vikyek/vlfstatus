@@ -9,3 +9,7 @@
 ## 2026-10-24 - Handling Missing Dependencies
 **Learning:** Raw stack traces from `ImportError` exceptions cause console clutter and confuse users who might not understand the difference between an unhandled code bug and an expected missing environment requirement.
 **Action:** When a tool relies on standard but optional external python dependencies (e.g. `fontforge`), wrap the initial import in a `try/except` block, suppress the raw traceback, and use standard error formatting (routed to `stderr`) to instruct the user on how to install the dependency.
+
+## 2024-11-09 - Reusable setup script formatting pattern
+**Learning:** Found a reusable output formatting pattern for bash setup scripts using indented semantic symbols and dimmed step headers to dramatically improve readability and visual hierarchy, without requiring external dependencies like `tqdm` or `gum`.
+**Action:** Always prefer this lightweight `step()` + indented `info/success/warn` structure for bash scripts to increase scannability without breaking POSIX compatibility.
