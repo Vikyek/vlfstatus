@@ -10,3 +10,7 @@
 ## 2024-10-03 - Granular Charging Feedback
 **Learning:** A single generic "Charging" icon lacks the context users need when their device is charging but they don't want to rely solely on the numerical text percentage. Showing an indicator that combines the 'charging' status with a visual capacity estimate is significantly more informative.
 **Action:** When creating status displays that contain multi-dimensional variables (like charging status + capacity), attempt to use icons that communicate both variables simultaneously to reduce cognitive load.
+
+## 2026-09-05 - Consistent AC Power States
+**Learning:** Users experience anxiety when a device on AC power switches to a discharging visual state just because it reaches a 'Full' or 'Not charging' state (e.g. bypass mode).
+**Action:** Group 'Charging', 'Full', and 'Not charging' states under the same 'plugged in' visual indicators to maintain consistent UX and prevent false alarms.
