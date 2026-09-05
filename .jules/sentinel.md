@@ -17,3 +17,8 @@
 **Vulnerability:** Untrusted external input (such as Wi-Fi SSIDs from `nmcli`) was inserted into JSON strings without stripping control characters. While standard special characters like `<` and `"` were escaped, literal control characters like newlines (`\n`), carriage returns (`\r`), or ANSI escape codes (`\e`) can break the JSON parser in the window manager (e.g. i3bar or swaybar), causing a Denial of Service.
 **Learning:** JSON specifications require control characters to be escaped. Failing to handle them allows attackers to crash downstream consumers of the JSON payload.
 **Prevention:** Always strip or escape control characters (e.g., using `VAR="${VAR//[[:cntrl:]]/}"`) when inserting untrusted input into structured formats like JSON.
+
+## 2026-09-05 - Prevent Stack Trace Leakage on Missing Dependencies
+**Vulnerability:** The script `fetch_quota.py` imported external dependencies (`secretstorage`) directly at the top level. If the module was missing, the application crashed, exposing internal stack traces to the user/logs.
+**Learning:** Raw tracebacks leak internal application structure, file paths, and execution context. When a script runs as a background daemon (like `fetch_quota.py`), unhandled exceptions can also pollute system logs unnecessarily. Failing securely means abstracting away implementation details from the failure state.
+**Prevention:** Wrap unreliable or external dependency imports in `try/except ImportError` blocks. Suppress raw tracebacks and instead route clear, styled instructional messages to standard error (`sys.stderr`), then exit securely.

@@ -1,14 +1,22 @@
-import secretstorage
 import json
 import urllib.request
 import urllib.parse
 import urllib.error
 import time
 import os
+import sys
 import tempfile
 import hashlib
 import subprocess
 from datetime import datetime
+
+# SECURITY: Prevent leaking stack traces when dependencies are missing.
+try:
+    import secretstorage
+except ImportError:
+    print("\033[1;31m[✖ ERROR]\033[0m Missing required dependency: secretstorage", file=sys.stderr)
+    print("    \033[2m↳ Please install it (e.g., pip install secretstorage)\033[0m", file=sys.stderr)
+    sys.exit(1)
 
 def get_client_secret():
     secret = os.environ.get("GOOGLE_CLIENT_SECRET")
