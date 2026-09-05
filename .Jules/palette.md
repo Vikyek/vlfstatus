@@ -11,7 +11,7 @@
 **Learning:** A single generic "Charging" icon lacks the context users need when their device is charging but they don't want to rely solely on the numerical text percentage. Showing an indicator that combines the 'charging' status with a visual capacity estimate is significantly more informative.
 **Action:** When creating status displays that contain multi-dimensional variables (like charging status + capacity), attempt to use icons that communicate both variables simultaneously to reduce cognitive load.
 ## 2026-10-04 - Consistent AC Power Indication
-**Learning:** Users can become anxious if they lose visual confirmation of external power when a device stops actively charging (e.g., reaches "Full" or "Not charging" due to a battery threshold).
+**Learning:** Users can become anxious if they lose visual confirmation of external power when a device stops actively charging (e.g., reaches "Full" or "Not charging" due to a battery threshold). Group 'Charging', 'Full', and 'Not charging' states under the same 'plugged in' visual indicators to maintain consistent UX and prevent false alarms.
 **Action:** Ensure the "plugged-in" visual state applies not just when actively charging, but whenever the device is receiving external power.
 ## 2026-09-06 - Progressive Stale Data Indicators
 **Learning:** When displaying data fetched asynchronously, simply showing the data age text (e.g., "5m ago") isn't enough. Users may not notice the text updating or understand when the delay indicates a background task failure versus a normal polling interval.
