@@ -13,3 +13,7 @@
 ## 2025-02-12 - Python ANSI color pattern
 **Learning:** Python scripts emitting ANSI escape codes to `sys.stderr` should verify that `os.environ.get("NO_COLOR")` is empty and `sys.stderr.isatty()` is true, otherwise raw ANSI characters can break CI environments and redirect output readability.
 **Action:** Use conditional assignment (e.g., `C_ERROR = '\033[1;31m' if not os.environ.get("NO_COLOR") and sys.stderr.isatty() else ''`) to enforce compliant Python console output formatting.
+
+## 2024-11-09 - Reusable setup script formatting pattern
+**Learning:** Found a reusable output formatting pattern for bash setup scripts using indented semantic symbols and dimmed step headers to dramatically improve readability and visual hierarchy, without requiring external dependencies like `tqdm` or `gum`.
+**Action:** Always prefer this lightweight `step()` + indented `info/success/warn` structure for bash scripts to increase scannability without breaking POSIX compatibility.

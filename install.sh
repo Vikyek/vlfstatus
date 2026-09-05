@@ -20,11 +20,11 @@ else
     C_DIM=''
 fi
 
+step() { echo -e "${C_DIM}---${C_RESET}\n${C_BOLD}$*${C_RESET}"; }
 info() { echo -e "  ${C_INFO}•${C_RESET} $*"; }
 success() { echo -e "  ${C_SUCCESS}✔${C_RESET} $*"; }
 warn() { echo -e "  ${C_WARN}⚠${C_RESET} $*"; }
 error() { echo -e "  ${C_ERROR}✖ ERROR:${C_RESET} $*" >&2; }
-step() { echo -e "${C_DIM}---${C_RESET}\n${C_BOLD}$1${C_RESET}"; }
 
 trap 'error "Installation failed at line $LINENO (exit code $?)"' ERR
 
@@ -40,6 +40,7 @@ elif [ -f "$HOME/.wlfstatusrc" ]; then
 fi
 
 if [ -n "$CONFIG_SRC" ]; then
+    step "Configuration Migration"
     info "Found legacy configuration at ${C_BOLD}$CONFIG_SRC${C_RESET}. Migrating..."
     # Ensure the new config directory exists
     mkdir -p "$HOME/.config/vlfstatus"
@@ -57,9 +58,13 @@ if [ -n "$CONFIG_SRC" ]; then
         done < "$CONFIG_SRC"
     } > "$HOME/.config/vlfstatus/config"
     
+<<<<<<< HEAD
     success "Migration completed: variables saved to ${C_BOLD}$HOME/.config/vlfstatus/config${C_RESET}"
 else
     info "No legacy config found, skipping."
+=======
+    success "Variables saved to ${C_BOLD}$HOME/.config/vlfstatus/config${C_RESET}"
+>>>>>>> 5a574c8 (Refactor install.sh output for better CLI-UX)
 fi
 
 step "2. i3 / Sway Integration"
@@ -67,6 +72,7 @@ step "2. i3 / Sway Integration"
 I3_CONFIG="$HOME/.config/i3/config"
 if [ -f "$I3_CONFIG" ]; then
     if grep -q "status_command.*wlfstatus" "$I3_CONFIG"; then
+        step "Updating Window Manager Config"
         info "Updating i3 status command in ${C_BOLD}$I3_CONFIG${C_RESET}..."
         sed -i 's/status_command.*wlfstatus/status_command $HOME\/.local\/bin\/vlfstatus/g' "$I3_CONFIG"
         success "Updated i3 config"
@@ -80,6 +86,7 @@ fi
 step "3. Legacy Binaries"
 # 3. Remove old wlfstatus symlink or binary
 if [ -e "$HOME/.local/bin/wlfstatus" ] || [ -L "$HOME/.local/bin/wlfstatus" ]; then
+    step "Cleanup Legacy Executable"
     info "Removing legacy wlfstatus executable..."
     rm -f "$HOME/.local/bin/wlfstatus"
     success "Cleaned up old binaries"
@@ -89,7 +96,12 @@ fi
 
 step "4. Core Installation"
 # 4. Install the new vlfstatus script and quota daemon
+<<<<<<< HEAD
 info "Copying binaries..."
+=======
+step "Installing Binaries"
+info "Copying files..."
+>>>>>>> 5a574c8 (Refactor install.sh output for better CLI-UX)
 mkdir -p "$HOME/.local/bin"
 cp -f vlfstatus "$HOME/.local/bin/vlfstatus"
 chmod +x "$HOME/.local/bin/vlfstatus"
@@ -99,6 +111,7 @@ success "Scripts installed to ${C_BOLD}$HOME/.local/bin/${C_RESET}"
 
 step "5. Service Restart"
 # 5. Reload/restart i3 status bar
+step "Restarting Environment"
 info "Restarting i3 wm/bar to apply changes..."
 # Find active i3 socket
 I3_SOCKET=$(ls -1 /run/user/$(id -u)/i3/ipc-socket.* 2>/dev/null | head -n 1 || true)
@@ -110,4 +123,10 @@ else
     success "Restarted via generic command"
 fi
 
+<<<<<<< HEAD
 echo -e "\n${C_SUCCESS}✨ vlfstatus setup completed successfully!${C_RESET}\n"
+=======
+echo ""
+echo -e "${C_SUCCESS}✔ vlfstatus installation and migration completed successfully!${C_RESET}"
+echo ""
+>>>>>>> 5a574c8 (Refactor install.sh output for better CLI-UX)
