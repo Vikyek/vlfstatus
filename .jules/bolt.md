@@ -7,3 +7,6 @@
 ## 2025-02-12 - Batching external command evaluation in bash high-frequency loops
 **Learning:** When evaluating external commands (like `awk` for floating-point math) inside a tight bash loop, calling the command on each iteration spawns multiple subshells per second, resulting in significant overhead and high CPU usage due to fork/exec calls.
 **Action:** Optimize performance by iteratively building expression strings within the loop and executing a single, batched evaluation command outside the loop.
+## 2023-10-25 - Reducing fork/exec overhead with native regex in bash loops
+**Learning:** External pipeline tools like `grep`, `sed`, `awk`, and `head` inside high-frequency bash loops (e.g., `vlfstatus`) cause significant CPU usage and performance degradation due to multiple subshell fork/exec operations per tick.
+**Action:** Replace external text parsing pipelines with CLI-native formatting flags (e.g., `nmcli -t -f`) and bash's built-in regular expression matching (`[[ "$VAR" =~ regex ]]`).
