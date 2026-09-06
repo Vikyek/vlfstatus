@@ -1,4 +1,3 @@
-import fontforge
 import os
 import subprocess
 
@@ -8,17 +7,31 @@ import sys
 if not os.environ.get("NO_COLOR") and sys.stdout.isatty():
     C_INFO = '\033[1;34m'
     C_SUCCESS = '\033[1;32m'
+    C_ERROR = '\033[1;31m'
+    C_BOLD = '\033[1m'
     C_DIM = '\033[2m'
     C_RESET = '\033[0m'
 else:
     C_INFO = ''
     C_SUCCESS = ''
+    C_ERROR = ''
+    C_BOLD = ''
     C_DIM = ''
     C_RESET = ''
 
 def info(msg): print(f"{C_INFO}[INFO]{C_RESET} {msg}")
 def success(msg): print(f"{C_SUCCESS}[✔]{C_RESET} {msg}")
+def error(msg): print(f"{C_ERROR}[✖ ERROR]{C_RESET} {msg}", file=sys.stderr)
 def dim(msg): print(f"    {C_DIM}↳ {msg}{C_RESET}")
+
+try:
+    import fontforge
+except ImportError:
+    print(file=sys.stderr)
+    error("Missing required dependency: fontforge")
+    print(f"    {C_DIM}↳ Please install it (e.g., sudo pacman -S fontforge){C_RESET}", file=sys.stderr)
+    print(file=sys.stderr)
+    sys.exit(1)
 
 def patch():
     font_path = "/usr/share/fonts/TTF/ShureTechMonoNerdFontPropo-Regular.ttf"
@@ -27,7 +40,7 @@ def patch():
     out_path = os.path.join(out_dir, "ShureTechMonoNerdFontPropo-Regular.ttf")
 
     print()
-    info(f"Opening font: {font_path}")
+    info(f"Opening font: {C_BOLD}{font_path}{C_RESET}")
     font = fontforge.open(font_path)
 
     # 1. Patch Gemini (0xf1a0)
@@ -79,7 +92,7 @@ def patch():
     dim(f"Final bbox: {g_claude.boundingBox()}")
 
     print()
-    info(f"Generating patched font at: {out_path}")
+    info(f"Generating patched font at: {C_BOLD}{out_path}{C_RESET}")
     font.generate(out_path)
     info("Updating font cache...")
     subprocess.run(["fc-cache", "-f"], check=True)

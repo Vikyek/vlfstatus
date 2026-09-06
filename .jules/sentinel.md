@@ -7,3 +7,23 @@
 **Vulnerability:** A script `patch_font.py` used `os.system("fc-cache -f")` to refresh the font cache.
 **Learning:** Using `os.system` executes commands in a shell environment, which leaves the script vulnerable to shell injection if any user input or variables are ever introduced, and relies on the shell's behavior which is generally insecure.
 **Prevention:** Always use `subprocess.run` with a list of arguments (e.g., `["fc-cache", "-f"]`) to execute external commands directly without spawning a shell.
+
+## 2026-09-02 - Removed Hardcoded Google Client Secret
+**Vulnerability:** A hardcoded Google API `client_secret` was present in `fetch_quota.py`. Hardcoded credentials can easily be leaked if the repository becomes public or is accessed by unauthorized users, granting them unauthorized access to the Google API using the application's identity.
+**Learning:** Hardcoding sensitive information such as API keys and secrets directly in the source code exposes them to significant security risks, especially in scripts distributed or committed to version control.
+**Prevention:** Always load sensitive credentials from secure sources such as environment variables (e.g., `os.environ.get`), secure configuration files, or secret management services instead of hardcoding them in the codebase.
+
+## 2026-09-03 - Strip Control Characters from External Input
+**Vulnerability:** Untrusted external input (such as Wi-Fi SSIDs from `nmcli`) was inserted into JSON strings without stripping control characters. While standard special characters like `<` and `"` were escaped, literal control characters like newlines (`\n`), carriage returns (`\r`), or ANSI escape codes (`\e`) can break the JSON parser in the window manager (e.g. i3bar or swaybar), causing a Denial of Service.
+**Learning:** JSON specifications require control characters to be escaped. Failing to handle them allows attackers to crash downstream consumers of the JSON payload.
+**Prevention:** Always strip or escape control characters (e.g., using `VAR="${VAR//[[:cntrl:]]/}"`) when inserting untrusted input into structured formats like JSON.
+
+## 2026-09-05 - Prevent Stack Trace Leakage on Missing Dependencies
+**Vulnerability:** The script `fetch_quota.py` imported external dependencies (`secretstorage`) directly at the top level. If the module was missing, the application crashed, exposing internal stack traces to the user/logs.
+**Learning:** Raw tracebacks leak internal application structure, file paths, and execution context. When a script runs as a background daemon (like `fetch_quota.py`), unhandled exceptions can also pollute system logs unnecessarily. Failing securely means abstracting away implementation details from the failure state.
+**Prevention:** Wrap unreliable or external dependency imports in `try/except ImportError` blocks. Suppress raw tracebacks and instead route clear, styled instructional messages to standard error (`sys.stderr`), then exit securely.
+
+## 2026-09-06 - Enforce Strict File Permissions on Credential Files
+**Vulnerability:** The script `fetch_quota.py` loaded Google API client secrets from local configuration files (`~/.gemini/config/.vault_credentials.env` and `~/.config/vlfstatus/credentials.env`) without verifying their file permissions. If these files were world-readable or group-readable (e.g., `chmod 644`), sensitive credentials could be exposed to unauthorized users on the same system.
+**Learning:** When storing and reading sensitive information in local files, it's crucial to enforce strict file permissions to ensure that only the owner has read access.
+**Prevention:** Before opening files containing credentials or sensitive data, use `os.stat` to verify that the file's permissions are properly restricted (e.g., `st.st_mode & 0o077` should be `0` for `chmod 600`). Reject or skip reading the file if permissions are insecure, and provide clear instructional error messages.

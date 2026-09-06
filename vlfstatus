@@ -35,16 +35,19 @@ while true; do
 	# ⚡ Bolt Optimization: Use bash built-ins for date formatting and reading files.
 	# Avoids expensive fork/exec of `date` and `cat` subprocesses every second.
 	printf -v DATETIME "%(%d %a %H:%M:%S)T" -1
-	WIFI_RAW=$(nmcli dev show wlp8s0 2>/dev/null | grep "GENERAL.CONNECTION" | sed -e "s/^GENERAL.CONNECTION:[ \t]*//")
+	# ⚡ Bolt Optimization: Use CLI-native formatting flag to avoid grep/sed fork/exec overhead
+	WIFI_RAW=$(nmcli -t -f GENERAL.CONNECTION dev show wlp8s0 2>/dev/null)
 	if [[ "$WIFI_RAW" == "--" || -z "$WIFI_RAW" ]]; then
 		WIFI_ICON="󰤮 "
 		WIFI_TEXT="Not connected"
 	else
 		WIFI_ICON="󰖩 "
 		WIFI_TEXT="$WIFI_RAW"
-		# Sanitize WIFI_TEXT to prevent JSON and Pango injection
+		# SECURITY: Sanitize WIFI_TEXT to prevent JSON and Pango injection.
+		# Specifically strip control characters which could break JSON output and crash the window manager.
 		# Handle bash 5.2+ patsub_replacement if enabled
 		shopt -u patsub_replacement 2>/dev/null || true
+		WIFI_TEXT="${WIFI_TEXT//[[:cntrl:]]/}"
 		WIFI_TEXT="${WIFI_TEXT//\\/\\\\}"
 		WIFI_TEXT="${WIFI_TEXT//&/&amp;}"
 		WIFI_TEXT="${WIFI_TEXT//</&lt;}"
@@ -54,19 +57,39 @@ while true; do
 	
 	read -r CAP 2>/dev/null < /sys/class/power_supply/BAT0/capacity || CAP=100
 	read -r BAT_STATUS 2>/dev/null < /sys/class/power_supply/BAT0/status || BAT_STATUS="Unknown"
-	if [[ "$BAT_STATUS" == "Charging" ]]; then
-		CAP_ICON="󰂄 "
+	if [[ "$BAT_STATUS" == "Charging" || "$BAT_STATUS" == "Full" || "$BAT_STATUS" == "Not charging" ]]; then
+		if [[ $CAP -gt 95 ]]; then
+			CAP_ICON="󰂅 "
+		elif [[ $CAP -gt 90 ]]; then
+			CAP_ICON="󰂋 "
+		elif [[ $CAP -gt 80 ]]; then
+			CAP_ICON="󰂊 "
+		elif [[ $CAP -gt 70 ]]; then
+			CAP_ICON="󰢞 "
+		elif [[ $CAP -gt 60 ]]; then
+			CAP_ICON="󰂉 "
+		elif [[ $CAP -gt 50 ]]; then
+			CAP_ICON="󰢝 "
+		elif [[ $CAP -gt 40 ]]; then
+			CAP_ICON="󰂈 "
+		elif [[ $CAP -gt 30 ]]; then
+			CAP_ICON="󰂇 "
+		elif [[ $CAP -gt 20 ]]; then
+			CAP_ICON="󰂆 "
+		else
+			CAP_ICON="󰢜 "
+		fi
 		COLOR_BAT=$COLOR_BAT_HIGH
-	elif [[ ((CAP -gt 74)) ]]; then
+	elif [[ $CAP -gt 74 ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_HIGH
-	elif [[ ((CAP -gt 49)) ]]; then
+	elif [[ $CAP -gt 49 ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_HIGH
-	elif [[ ((CAP -gt 24)) ]]; then
+	elif [[ $CAP -gt 24 ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_MID
-	elif [[ ((CAP -gt 10)) ]]; then
+	elif [[ $CAP -gt 10 ]]; then
 		CAP_ICON=" "
 		COLOR_BAT=$COLOR_BAT_LOW
 	else
@@ -142,23 +165,11 @@ while true; do
 					C_5H="${C_5H_ARR[$i]}"
 					C_WK="${C_WK_ARR[$i]}"
 
-					G_WK_INT=${G_WK%.*}
-					if [ -z "$G_WK_INT" ] || [ "$G_WK_INT" -eq 0 ]; then
-						G5H="$G_WK"
-						G_EPOCH="${G_WK_EPOCH_ARR[$i]}"
-					else
-						G5H="$G_5H"
-						G_EPOCH="${G_5H_EPOCH_ARR[$i]}"
-					fi
+					G5H="${G_5H:-$G_WK}"
+					G_EPOCH="${G_5H_EPOCH_ARR[$i]:-${G_WK_EPOCH_ARR[$i]}}"
 
-					C_WK_INT=${C_WK%.*}
-					if [ -z "$C_WK_INT" ] || [ "$C_WK_INT" -eq 0 ]; then
-						C5H="$C_WK"
-						C_EPOCH="${C_WK_EPOCH_ARR[$i]}"
-					else
-						C5H="$C_5H"
-						C_EPOCH="${C_5H_EPOCH_ARR[$i]}"
-					fi
+					C5H="${C_5H:-$C_WK}"
+					C_EPOCH="${C_5H_EPOCH_ARR[$i]:-${C_WK_EPOCH_ARR[$i]}}"
 
 					G_RESET="N/A"
 					if [ -n "$G_EPOCH" ] && [ "$G_EPOCH" -gt 0 ]; then
@@ -176,8 +187,9 @@ while true; do
 				QUOTA_TEXT="$QUOTA_TEXT${REFRESH_TXT}"
 			else
 				# Combined mode
-				AWK_G_EXPR="0"
-				AWK_C_EXPR="0"
+				# ⚡ Bolt Optimization: Batch awk floating-point math evaluation outside the loop to avoid multiple expensive fork/exec calls per account.
+				TOTAL_G_EXPR="0"
+				TOTAL_C_EXPR="0"
 				MIN_G_EPOCH=99999999999
 				MIN_C_EPOCH=99999999999
 
@@ -187,29 +199,14 @@ while true; do
 					C_5H="${C_5H_ARR[$i]}"
 					C_WK="${C_WK_ARR[$i]}"
 
-					G_WK_INT=${G_WK%.*}
-					if [ -z "$G_WK_INT" ] || [ "$G_WK_INT" -eq 0 ]; then
-						G5H="$G_WK"
-						G_EPOCH="${G_WK_EPOCH_ARR[$i]}"
-					else
-						G5H="$G_5H"
-						G_EPOCH="${G_5H_EPOCH_ARR[$i]}"
-					fi
+					G5H="${G_5H:-$G_WK}"
+					G_EPOCH="${G_5H_EPOCH_ARR[$i]:-${G_WK_EPOCH_ARR[$i]}}"
 
-					C_WK_INT=${C_WK%.*}
-					if [ -z "$C_WK_INT" ] || [ "$C_WK_INT" -eq 0 ]; then
-						C5H="$C_WK"
-						C_EPOCH="${C_WK_EPOCH_ARR[$i]}"
-					else
-						C5H="$C_5H"
-						C_EPOCH="${C_5H_EPOCH_ARR[$i]}"
-					fi
+					C5H="${C_5H:-$C_WK}"
+					C_EPOCH="${C_5H_EPOCH_ARR[$i]:-${C_WK_EPOCH_ARR[$i]}}"
 
-					# ⚡ Bolt Optimization: Batch awk calculations
-					# Instead of spawning 2 awk subprocesses per account every second,
-					# build math expressions and execute awk once after the loop.
-					AWK_G_EXPR="$AWK_G_EXPR + ${G5H:-0}"
-					AWK_C_EXPR="$AWK_C_EXPR + ${C5H:-0}"
+					TOTAL_G_EXPR="$TOTAL_G_EXPR + ${G5H:-0}"
+					TOTAL_C_EXPR="$TOTAL_C_EXPR + ${C5H:-0}"
 
 					# Only consider epochs > 0
 					if [ -n "$G_EPOCH" ] && [ "$G_EPOCH" -gt 0 ] && [ "$G_EPOCH" -lt "$MIN_G_EPOCH" ]; then
@@ -220,6 +217,9 @@ while true; do
 					fi
 				done
 				read -r TOTAL_G TOTAL_C <<< $(awk "BEGIN {print $AWK_G_EXPR, $AWK_C_EXPR}")
+
+				TOTAL_G=$(awk "BEGIN {val=($TOTAL_G_EXPR)/$LAST_NUM_ACCOUNTS; if (val == int(val)) printf \"%d\", val; else printf \"%.1f\", val}")
+				TOTAL_C=$(awk "BEGIN {val=($TOTAL_C_EXPR)/$LAST_NUM_ACCOUNTS; if (val == int(val)) printf \"%d\", val; else printf \"%.1f\", val}")
 
 				G_RESET="N/A"
 				if [ "$MIN_G_EPOCH" -ne 99999999999 ]; then
@@ -238,8 +238,13 @@ while true; do
 	
 	# Retrieve Volume Status
 	VOL_INDICATOR=""
-	MUTE_STATUS=$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null | awk '{print $2}')
-	VOL_RAW=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null | grep -Po '[0-9]+(?=%)' | head -n1)
+	# ⚡ Bolt Optimization: Replace awk/grep/head external pipelines with bash native regex matching to eliminate subshell forks
+	PACTL_MUTE_OUT=$(pactl get-sink-mute @DEFAULT_SINK@ 2>/dev/null)
+	[[ "$PACTL_MUTE_OUT" =~ (yes|no) ]] && MUTE_STATUS="${BASH_REMATCH[1]}" || MUTE_STATUS=""
+
+	PACTL_VOL_OUT=$(pactl get-sink-volume @DEFAULT_SINK@ 2>/dev/null)
+	[[ "$PACTL_VOL_OUT" =~ ([0-9]+)% ]] && VOL_RAW="${BASH_REMATCH[1]}" || VOL_RAW=""
+
 	if [ -n "$VOL_RAW" ]; then
 		if [ "$MUTE_STATUS" = "yes" ]; then
 			VOL_INDICATOR=" <span color='$COLOR_BAT_LOW'>󰝟 </span><span color='$COLOR_TEXT'>muted (${VOL_RAW}%)</span>"

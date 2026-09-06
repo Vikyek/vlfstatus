@@ -7,3 +7,9 @@
 ## 2026-09-02 - Preserve Contextual Values Behind States
 **Learning:** Hiding continuous values (like volume percentage) when entering a binary override state (like muted) creates user anxiety, as they lose context of what will happen when the state is toggled off.
 **Action:** Always maintain the display of underlying numeric or continuous state values even when a binary override state is active.
+## 2024-10-03 - Granular Charging Feedback
+**Learning:** A single generic "Charging" icon lacks the context users need when their device is charging but they don't want to rely solely on the numerical text percentage. Showing an indicator that combines the 'charging' status with a visual capacity estimate is significantly more informative.
+**Action:** When creating status displays that contain multi-dimensional variables (like charging status + capacity), attempt to use icons that communicate both variables simultaneously to reduce cognitive load.
+## 2026-10-04 - Consistent AC Power Indication
+**Learning:** Users can become anxious if they lose visual confirmation of external power when a device stops actively charging (e.g., reaches "Full" or "Not charging" due to a battery threshold).
+**Action:** Ensure the "plugged-in" visual state applies not just when actively charging, but whenever the device is receiving external power.
