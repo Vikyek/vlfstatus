@@ -22,3 +22,8 @@
 **Vulnerability:** The script `fetch_quota.py` imported external dependencies (`secretstorage`) directly at the top level. If the module was missing, the application crashed, exposing internal stack traces to the user/logs.
 **Learning:** Raw tracebacks leak internal application structure, file paths, and execution context. When a script runs as a background daemon (like `fetch_quota.py`), unhandled exceptions can also pollute system logs unnecessarily. Failing securely means abstracting away implementation details from the failure state.
 **Prevention:** Wrap unreliable or external dependency imports in `try/except ImportError` blocks. Suppress raw tracebacks and instead route clear, styled instructional messages to standard error (`sys.stderr`), then exit securely.
+
+## 2026-09-06 - Enforce Strict File Permissions on Credential Files
+**Vulnerability:** The script `fetch_quota.py` loaded Google API client secrets from local configuration files (`~/.gemini/config/.vault_credentials.env` and `~/.config/vlfstatus/credentials.env`) without verifying their file permissions. If these files were world-readable or group-readable (e.g., `chmod 644`), sensitive credentials could be exposed to unauthorized users on the same system.
+**Learning:** When storing and reading sensitive information in local files, it's crucial to enforce strict file permissions to ensure that only the owner has read access.
+**Prevention:** Before opening files containing credentials or sensitive data, use `os.stat` to verify that the file's permissions are properly restricted (e.g., `st.st_mode & 0o077` should be `0` for `chmod 600`). Reject or skip reading the file if permissions are insecure, and provide clear instructional error messages.
