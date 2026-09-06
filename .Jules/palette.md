@@ -13,3 +13,6 @@
 ## 2026-10-04 - Consistent AC Power Indication
 **Learning:** Users can become anxious if they lose visual confirmation of external power when a device stops actively charging (e.g., reaches "Full" or "Not charging" due to a battery threshold).
 **Action:** Ensure the "plugged-in" visual state applies not just when actively charging, but whenever the device is receiving external power.
+## 2026-09-06 - Progressive Stale Data Indicators
+**Learning:** When displaying data fetched asynchronously, simply showing the data age text (e.g., "5m ago") isn't enough. Users may not notice the text updating or understand when the delay indicates a background task failure versus a normal polling interval.
+**Action:** Use progressive color cues (e.g., shifting from normal to warning to critical colors) mapped to specific time thresholds to provide pre-attentive feedback about stale asynchronous data.
