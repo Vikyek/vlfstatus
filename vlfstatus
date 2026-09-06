@@ -126,6 +126,13 @@ while true; do
 			REFRESH_TXT=""
 			if [ -n "$LAST_UPDATED" ]; then
 				AGE=$((NOW - LAST_UPDATED))
+				AGE_COLOR="$COLOR_SEP"
+				if [ $AGE -ge 300 ]; then
+					AGE_COLOR="$COLOR_BAT_LOW"
+				elif [ $AGE -ge 120 ]; then
+					AGE_COLOR="$COLOR_BAT_MID"
+				fi
+
 				if [ $AGE -ge 60 ]; then
 					AGE_M=$((AGE / 60))
 					AGE_S=$((AGE % 60))
@@ -133,7 +140,7 @@ while true; do
 				else
 					AGE_TXT="${AGE}s"
 				fi
-				REFRESH_TXT=" <span color='$COLOR_SEP'>⟳ ${AGE_TXT}</span>"
+				REFRESH_TXT=" <span color='$AGE_COLOR'>⟳ ${AGE_TXT}</span>"
 			fi
 			
 			function format_reset_time() {
