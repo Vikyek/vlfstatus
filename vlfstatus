@@ -56,7 +56,7 @@ while true; do
 	
 	read -r CAP 2>/dev/null < /sys/class/power_supply/BAT0/capacity || CAP=100
 	read -r BAT_STATUS 2>/dev/null < /sys/class/power_supply/BAT0/status || BAT_STATUS="Unknown"
-	if [[ "$BAT_STATUS" == "Charging" ]]; then
+	if [[ "$BAT_STATUS" == "Charging" || "$BAT_STATUS" == "Full" || "$BAT_STATUS" == "Not charging" ]]; then
 		if [[ $CAP -gt 95 ]]; then
 			CAP_ICON="󰂅 "
 		elif [[ $CAP -gt 90 ]]; then
