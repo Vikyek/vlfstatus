@@ -14,8 +14,16 @@ from datetime import datetime
 try:
     import secretstorage
 except ImportError:
-    print("\033[1;31m[✖ ERROR]\033[0m Missing required dependency: secretstorage", file=sys.stderr)
-    print("    \033[2m↳ Please install it (e.g., pip install secretstorage)\033[0m", file=sys.stderr)
+    if not os.environ.get("NO_COLOR") and sys.stderr.isatty():
+        C_ERROR = '\033[1;31m'
+        C_DIM = '\033[2m'
+        C_RESET = '\033[0m'
+    else:
+        C_ERROR = ''
+        C_DIM = ''
+        C_RESET = ''
+    print(f"{C_ERROR}[✖ ERROR]{C_RESET} Missing required dependency: secretstorage", file=sys.stderr)
+    print(f"    {C_DIM}↳ Please install it (e.g., pip install secretstorage){C_RESET}", file=sys.stderr)
     sys.exit(1)
 
 def get_client_secret():
