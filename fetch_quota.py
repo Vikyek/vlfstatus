@@ -29,6 +29,15 @@ def get_client_secret():
     ]
     for env_path in env_paths:
         if os.path.exists(env_path):
+            # SECURITY: Enforce strict file permissions on credential files
+            try:
+                st = os.stat(env_path)
+                if st.st_mode & 0o077:
+                    print(f"\033[1;31m[✖ ERROR]\033[0m Insecure permissions on {env_path}. File must not be readable by group/others. Run 'chmod 600 {env_path}'.", file=sys.stderr)
+                    continue
+            except Exception:
+                pass
+
             try:
                 with open(env_path, "r") as f:
                     for line in f:
