@@ -117,6 +117,26 @@ while true; do
 
 			LAST_NUM_ACCOUNTS=${#G_5H_ARR[@]}
 			LAST_UPDATED=$(grep -oP '"last_updated_epoch": \K[0-9]+' ~/.cache/agy_quota.json | head -n1)
+
+			# Pre-calculate TOTAL_G and TOTAL_C for combined mode to avoid fork/exec per second
+			if [ "$LAST_NUM_ACCOUNTS" -gt 0 ]; then
+				TOTAL_G_EXPR="0"
+				TOTAL_C_EXPR="0"
+				for ((i=0; i<$LAST_NUM_ACCOUNTS; i++)); do
+					G_5H="${G_5H_ARR[$i]}"
+					G_WK="${G_WK_ARR[$i]}"
+					C_5H="${C_5H_ARR[$i]}"
+					C_WK="${C_WK_ARR[$i]}"
+
+					G5H="${G_5H:-$G_WK}"
+					C5H="${C_5H:-$C_WK}"
+
+					TOTAL_G_EXPR="$TOTAL_G_EXPR + ${G5H:-0}"
+					TOTAL_C_EXPR="$TOTAL_C_EXPR + ${C5H:-0}"
+				done
+				CACHED_TOTAL_G=$(awk "BEGIN {val=($TOTAL_G_EXPR)/$LAST_NUM_ACCOUNTS; if (val == int(val)) printf \"%d\", val; else printf \"%.1f\", val}")
+				CACHED_TOTAL_C=$(awk "BEGIN {val=($TOTAL_C_EXPR)/$LAST_NUM_ACCOUNTS; if (val == int(val)) printf \"%d\", val; else printf \"%.1f\", val}")
+			fi
 		fi
 
 		if [ $LAST_NUM_ACCOUNTS -gt 0 ]; then
@@ -194,26 +214,13 @@ while true; do
 				QUOTA_TEXT="$QUOTA_TEXT${REFRESH_TXT}"
 			else
 				# Combined mode
-				# ⚡ Bolt Optimization: Batch awk floating-point math evaluation outside the loop to avoid multiple expensive fork/exec calls per account.
-				TOTAL_G_EXPR="0"
-				TOTAL_C_EXPR="0"
+				# ⚡ Bolt Optimization: Batch awk floating-point math evaluation outside the high-frequency loop by caching.
 				MIN_G_EPOCH=99999999999
 				MIN_C_EPOCH=99999999999
 
 				for ((i=0; i<$LAST_NUM_ACCOUNTS; i++)); do
-					G_5H="${G_5H_ARR[$i]}"
-					G_WK="${G_WK_ARR[$i]}"
-					C_5H="${C_5H_ARR[$i]}"
-					C_WK="${C_WK_ARR[$i]}"
-
-					G5H="${G_5H:-$G_WK}"
 					G_EPOCH="${G_5H_EPOCH_ARR[$i]:-${G_WK_EPOCH_ARR[$i]}}"
-
-					C5H="${C_5H:-$C_WK}"
 					C_EPOCH="${C_5H_EPOCH_ARR[$i]:-${C_WK_EPOCH_ARR[$i]}}"
-
-					TOTAL_G_EXPR="$TOTAL_G_EXPR + ${G5H:-0}"
-					TOTAL_C_EXPR="$TOTAL_C_EXPR + ${C5H:-0}"
 
 					# Only consider epochs > 0
 					if [ -n "$G_EPOCH" ] && [ "$G_EPOCH" -gt 0 ] && [ "$G_EPOCH" -lt "$MIN_G_EPOCH" ]; then
@@ -225,8 +232,8 @@ while true; do
 				done
 				read -r TOTAL_G TOTAL_C <<< $(awk "BEGIN {print $AWK_G_EXPR, $AWK_C_EXPR}")
 
-				TOTAL_G=$(awk "BEGIN {val=($TOTAL_G_EXPR)/$LAST_NUM_ACCOUNTS; if (val == int(val)) printf \"%d\", val; else printf \"%.1f\", val}")
-				TOTAL_C=$(awk "BEGIN {val=($TOTAL_C_EXPR)/$LAST_NUM_ACCOUNTS; if (val == int(val)) printf \"%d\", val; else printf \"%.1f\", val}")
+				TOTAL_G=$CACHED_TOTAL_G
+				TOTAL_C=$CACHED_TOTAL_C
 
 				G_RESET="N/A"
 				if [ "$MIN_G_EPOCH" -ne 99999999999 ]; then
