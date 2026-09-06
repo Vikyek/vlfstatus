@@ -8,3 +8,9 @@
 ## 2024-05-18 - [Batching subprocess calls inside loops]
 **Learning:** In bash scripts with high-frequency loops (like `vlfstatus`), iterative variable updates that rely on subprocess calls (e.g., `TOTAL=$(awk ...)`) scale poorly when inside nested loops over dynamic collections (like multiple accounts), due to the fork/exec overhead multiplying (O(N) subprocesses).
 **Action:** Always batch math or text processing by building expression strings inside the loop and evaluating them once via a single subprocess call outside the loop, significantly reducing CPU usage and latency.
+## 2025-02-12 - Batching external command evaluation in bash high-frequency loops
+**Learning:** When evaluating external commands (like `awk` for floating-point math) inside a tight bash loop, calling the command on each iteration spawns multiple subshells per second, resulting in significant overhead and high CPU usage due to fork/exec calls.
+**Action:** Optimize performance by iteratively building expression strings within the loop and executing a single, batched evaluation command outside the loop.
+## 2023-10-25 - Reducing fork/exec overhead with native regex in bash loops
+**Learning:** External pipeline tools like `grep`, `sed`, `awk`, and `head` inside high-frequency bash loops (e.g., `vlfstatus`) cause significant CPU usage and performance degradation due to multiple subshell fork/exec operations per tick.
+**Action:** Replace external text parsing pipelines with CLI-native formatting flags (e.g., `nmcli -t -f`) and bash's built-in regular expression matching (`[[ "$VAR" =~ regex ]]`).

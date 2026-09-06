@@ -1,16 +1,63 @@
-import secretstorage
 import json
 import urllib.request
 import urllib.parse
 import urllib.error
 import time
 import os
+import sys
 import tempfile
+import hashlib
+import subprocess
+from datetime import datetime
+
+# SECURITY: Prevent leaking stack traces when dependencies are missing.
+try:
+    import secretstorage
+except ImportError:
+    print("\033[1;31m[✖ ERROR]\033[0m Missing required dependency: secretstorage", file=sys.stderr)
+    print("    \033[2m↳ Please install it (e.g., pip install secretstorage)\033[0m", file=sys.stderr)
+    sys.exit(1)
+
+def get_client_secret():
+    secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+    if secret:
+        return secret
+    
+    env_paths = [
+        os.path.expanduser("~/.gemini/config/.vault_credentials.env"),
+        os.path.expanduser("~/.config/vlfstatus/credentials.env")
+    ]
+    for env_path in env_paths:
+        if os.path.exists(env_path):
+            # SECURITY: Enforce strict file permissions on credential files
+            try:
+                st = os.stat(env_path)
+                if st.st_mode & 0o077:
+                    print(f"\033[1;31m[✖ ERROR]\033[0m Insecure permissions on {env_path}. File must not be readable by group/others. Run 'chmod 600 {env_path}'.", file=sys.stderr)
+                    continue
+            except Exception:
+                pass
+
+            try:
+                with open(env_path, "r") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("GOOGLE_CLIENT_SECRET="):
+                            val = line.split("=", 1)[1].strip("\"'")
+                            if val:
+                                return val
+            except Exception:
+                pass
+    return None
 
 def refresh_token(ref_token):
     url = "https://oauth2.googleapis.com/token"
     client_id = "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
-    client_secret = "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"
+
+    client_secret = get_client_secret()
+    if not client_secret:
+        raise ValueError("Missing GOOGLE_CLIENT_SECRET in environment or vault credentials")
+
     data = urllib.parse.urlencode({
         "client_id": client_id,
         "client_secret": client_secret,
@@ -22,76 +69,56 @@ def refresh_token(ref_token):
         res = json.loads(resp.read().decode("utf-8"))
         return res["access_token"], int(res.get("expires_in", 3600))
 
-def get_ref_tokens():
-    tokens = []
+def fetch_quota_from_agy_cli():
     try:
-        path = os.path.expanduser("~/.config/opencode/antigravity-accounts.json")
-        if os.path.exists(path):
-            with open(path, "r") as f:
-                data = json.load(f)
-                accounts = data.get("accounts", [])
-                for acc in accounts:
-                    ref_token = acc.get("refreshToken")
-                    if ref_token and ref_token not in tokens:
-                        tokens.append(ref_token)
-    except Exception:
-        pass
+        res = subprocess.run(
+            ["agy", "-p", "/quota", "--output-format", "json"],
+            capture_output=True,
+            text=True,
+            timeout=20
+        )
+        if res.returncode != 0 or not res.stdout.strip():
+            return None
 
-    try:
-        connection = secretstorage.dbus_init()
-        collections = list(secretstorage.get_all_collections(connection))
-        for collection in collections:
-            for item in collection.get_all_items():
-                attrs = item.get_attributes()
-                if attrs.get('service') == 'gemini' and attrs.get('username') == 'antigravity':
-                    secret_data = json.loads(item.get_secret().decode('utf-8', errors='ignore'))
-                    ref_token = secret_data.get("token", {}).get("refresh_token")
-                    if ref_token and ref_token not in tokens:
-                        tokens.append(ref_token)
-    except Exception:
-        pass
-    return tokens
+        data = json.loads(res.stdout)
+        usage_data = data.get("command", {}).get("data", {})
+        groups = usage_data.get("groups", [])
+        if not groups:
+            return None
 
-def load_cached_token(cache_path):
-    if not os.path.exists(cache_path):
-        return None, 0
-    try:
-        with open(cache_path, "r") as f:
-            data = json.load(f)
-            expiry = data.get("expiry_seconds", 0)
-            if expiry > time.time() + 60:
-                return data.get("access_token"), expiry
-    except Exception:
-        pass
-    return None, 0
+        acc_output = {}
+        for group in groups:
+            disp_name = group.get("name", "")
+            prefix = "gemini" if "Gemini" in disp_name else "claude"
+            for bucket in group.get("buckets", []):
+                window = bucket.get("window", "")
+                suffix = "5h" if window == "5h" else "weekly"
+                rem_frac = bucket.get("remaining_fraction", 0.0)
+                rem_pct = round(rem_frac * 100, 1)
 
-def save_cached_token(cache_path, token, expires_in):
-    try:
-        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
-        data = {
-            "access_token": token,
-            "expiry_seconds": int(time.time() + expires_in)
-        }
-        with open(os.open(cache_path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600), "w") as f:
-            json.dump(data, f)
-    except Exception:
-        pass
+                reset_time = bucket.get("reset_time", "")
+                reset_epoch = 0
+                if reset_time:
+                    try:
+                        rt = datetime.fromisoformat(reset_time.replace("Z", "+00:00"))
+                        reset_epoch = int(rt.timestamp())
+                    except Exception:
+                        pass
 
-def fetch_quota_summary(token):
-    url = "https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary"
-    req = urllib.request.Request(
-        url,
-        data=b"{}",
-        headers={
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {token}",
-            "User-Agent": "antigravity"
-        },
-        method="POST"
-    )
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+                acc_output[f"{prefix}_{suffix}"] = f"{rem_pct}%"
+                acc_output[f"{prefix}_{suffix}_reset_epoch"] = reset_epoch
+
+        for prefix in ("gemini", "claude"):
+            if f"{prefix}_5h" not in acc_output and f"{prefix}_weekly" in acc_output:
+                acc_output[f"{prefix}_5h"] = acc_output[f"{prefix}_weekly"]
+                acc_output[f"{prefix}_5h_reset_epoch"] = acc_output.get(f"{prefix}_weekly_reset_epoch", 0)
+            if f"{prefix}_weekly" not in acc_output and f"{prefix}_5h" in acc_output:
+                acc_output[f"{prefix}_weekly"] = acc_output[f"{prefix}_5h"]
+                acc_output[f"{prefix}_weekly_reset_epoch"] = acc_output.get(f"{prefix}_5h_reset_epoch", 0)
+
+        return acc_output
+    except Exception:
+        return None
 
 def write_output_json(out_path, data):
     dir_name = os.path.dirname(out_path)
@@ -106,77 +133,33 @@ def write_output_json(out_path, data):
             os.remove(temp_path)
 
 def main():
-    import hashlib
     cache_dir = os.path.expanduser("~/.cache/token-conso")
     out_path = os.path.expanduser("~/.cache/agy_quota.json")
     
     while True:
-        current_data = {}
-        if os.path.exists(out_path):
-            try:
-                with open(out_path, "r") as f:
-                    current_data = json.load(f)
-            except Exception:
-                pass
-
         try:
-            ref_tokens = get_ref_tokens()
-            if not ref_tokens:
-                raise Exception("No refresh tokens available")
-            
-            output = {"accounts": []}
-
-            for idx, ref_token in enumerate(ref_tokens):
-                # Use a hash of the refresh token to create a unique cache path
-                token_hash = hashlib.sha256(ref_token.encode('utf-8')).hexdigest()[:16]
-                cache_path = os.path.join(cache_dir, f"antigravity-auth-{token_hash}.json")
-
+            current_data = {}
+            if os.path.exists(out_path):
                 try:
-                    token, expiry = load_cached_token(cache_path)
-                    if not token:
-                        token, expires_in = refresh_token(ref_token)
-                        save_cached_token(cache_path, token, expires_in)
+                    with open(out_path, "r") as f:
+                        current_data = json.load(f)
+                except Exception:
+                    pass
 
-                    summary = fetch_quota_summary(token)
-                    
-                    acc_output = {}
-                    for group in summary.get("groups", []):
-                        disp_name = group.get("displayName", "")
-                        prefix = "gemini" if "Gemini" in disp_name else "claude"
-                        for bucket in group.get("buckets", []):
-                            window = bucket.get("window", "")
-                            suffix = "5h" if window == "5h" else "weekly"
-                            rem_frac = bucket.get("remainingFraction", 0.0)
-                            rem_pct = round(rem_frac * 100, 1)
-
-                            reset_time = bucket.get("resetTime", "")
-                            reset_epoch = 0
-                            if reset_time:
-                                from datetime import datetime
-                                try:
-                                    rt = datetime.fromisoformat(reset_time.replace("Z", "+00:00"))
-                                    reset_epoch = int(rt.timestamp())
-                                except Exception:
-                                    pass
-
-                            acc_output[f"{prefix}_{suffix}"] = f"{rem_pct}%"
-                            acc_output[f"{prefix}_{suffix}_reset_epoch"] = reset_epoch
-                    
-                    output["accounts"].append(acc_output)
-                except Exception as e:
-                    pass # Skip failing tokens
-            
-            output["last_updated_epoch"] = int(time.time())
-            write_output_json(out_path, output)
-            
-        except Exception:
-            if current_data:
-                current_data["last_updated_epoch"] = int(time.time())
-                write_output_json(out_path, current_data)
+            # 1. Primary: fetch via agy CLI
+            acc_output = fetch_quota_from_agy_cli()
+            if acc_output:
+                output = {"accounts": [acc_output], "last_updated_epoch": int(time.time())}
+                write_output_json(out_path, output)
             else:
-                write_output_json(out_path, {"last_updated_epoch": int(time.time())})
-            
-        time.sleep(60)
+                # Keep existing data alive if fetch failed temporarily
+                if current_data:
+                    current_data["last_updated_epoch"] = int(time.time())
+                    write_output_json(out_path, current_data)
+        except Exception:
+            pass
+
+        time.sleep(30)
 
 if __name__ == "__main__":
     main()
