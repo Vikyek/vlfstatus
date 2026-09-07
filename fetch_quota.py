@@ -22,8 +22,10 @@ except ImportError:
         C_ERROR = ''
         C_DIM = ''
         C_RESET = ''
+    print(file=sys.stderr)
     print(f"{C_ERROR}[✖ ERROR]{C_RESET} Missing required dependency: secretstorage", file=sys.stderr)
     print(f"    {C_DIM}↳ Please install it (e.g., pip install secretstorage){C_RESET}", file=sys.stderr)
+    print(file=sys.stderr)
     sys.exit(1)
 
 def get_client_secret():
