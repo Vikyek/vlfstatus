@@ -16,3 +16,6 @@
 ## 2026-09-06 - Progressive Stale Data Indicators
 **Learning:** When displaying data fetched asynchronously, simply showing the data age text (e.g., "5m ago") isn't enough. Users may not notice the text updating or understand when the delay indicates a background task failure versus a normal polling interval.
 **Action:** Use progressive color cues (e.g., shifting from normal to warning to critical colors) mapped to specific time thresholds to provide pre-attentive feedback about stale asynchronous data.
+## 2024-10-07 - Contextual Warning Colors for Disconnected States
+**Learning:** Hard-coded warning text for disconnected states (e.g., "Not connected") can be overwhelming in bright or contrasting colors like white, adding to visual noise rather than clear communication.
+**Action:** Use dim or subtle colors for the text of a disconnected state to reduce visual noise, and reserve attention-grabbing colors (like red/critical) specifically for the icon itself to indicate the lack of connectivity at a glance.
