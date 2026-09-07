@@ -40,9 +40,13 @@ while true; do
 	if [[ "$WIFI_RAW" == "--" || -z "$WIFI_RAW" ]]; then
 		WIFI_ICON="󰤮 "
 		WIFI_TEXT="Not connected"
+		WIFI_COLOR_ICON="$COLOR_BAT_LOW"
+		WIFI_COLOR_TEXT="$COLOR_SEP"
 	else
 		WIFI_ICON="󰖩 "
 		WIFI_TEXT="$WIFI_RAW"
+		WIFI_COLOR_ICON="$COLOR_WIFI"
+		WIFI_COLOR_TEXT="$COLOR_TEXT"
 		# SECURITY: Sanitize WIFI_TEXT to prevent JSON and Pango injection.
 		# Specifically strip control characters which could break JSON output and crash the window manager.
 		# Handle bash 5.2+ patsub_replacement if enabled
@@ -293,7 +297,7 @@ while true; do
 	if [ -n "$QUOTA_TEXT" ]; then
 		BAR="$BAR$QUOTA_TEXT <span color='$COLOR_SEP'>//</span>"
 	fi
-	BAR="$BAR <span color='$COLOR_WIFI'>$WIFI_ICON</span><span color='$COLOR_TEXT'>$WIFI_TEXT</span>"
+	BAR="$BAR <span color='$WIFI_COLOR_ICON'>$WIFI_ICON</span><span color='$WIFI_COLOR_TEXT'>$WIFI_TEXT</span>"
 	if [ -n "$VOL_INDICATOR" ]; then
 		BAR="$BAR <span color='$COLOR_SEP'>//</span>$VOL_INDICATOR"
 	fi
