@@ -58,13 +58,9 @@ if [ -n "$CONFIG_SRC" ]; then
         done < "$CONFIG_SRC"
     } > "$HOME/.config/vlfstatus/config"
     
-<<<<<<< HEAD
-    success "Migration completed: variables saved to ${C_BOLD}$HOME/.config/vlfstatus/config${C_RESET}"
+    success "Variables saved to ${C_BOLD}$HOME/.config/vlfstatus/config${C_RESET}"
 else
     info "No legacy config found, skipping."
-=======
-    success "Variables saved to ${C_BOLD}$HOME/.config/vlfstatus/config${C_RESET}"
->>>>>>> 5a574c8 (Refactor install.sh output for better CLI-UX)
 fi
 
 step "2. i3 / Sway Integration"
@@ -96,12 +92,7 @@ fi
 
 step "4. Core Installation"
 # 4. Install the new vlfstatus script and quota daemon
-<<<<<<< HEAD
 info "Copying binaries..."
-=======
-step "Installing Binaries"
-info "Copying files..."
->>>>>>> 5a574c8 (Refactor install.sh output for better CLI-UX)
 mkdir -p "$HOME/.local/bin"
 cp -f vlfstatus "$HOME/.local/bin/vlfstatus"
 chmod +x "$HOME/.local/bin/vlfstatus"
@@ -123,10 +114,4 @@ else
     success "Restarted via generic command"
 fi
 
-<<<<<<< HEAD
 echo -e "\n${C_SUCCESS}✨ vlfstatus setup completed successfully!${C_RESET}\n"
-=======
-echo ""
-echo -e "${C_SUCCESS}✔ vlfstatus installation and migration completed successfully!${C_RESET}"
-echo ""
->>>>>>> 5a574c8 (Refactor install.sh output for better CLI-UX)

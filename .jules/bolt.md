@@ -18,3 +18,6 @@
 ## 2025-02-12 - Decoupling slow-changing state calculations from high-frequency bash loops
 **Learning:** Even when state updates are correctly gated by file modification checks, subsequent calculations based on that state (like calling `awk` to average floating-point arrays) can accidentally remain outside the check block, causing them to execute on every single tick of a high-frequency loop and wasting CPU.
 **Action:** Always verify that calculations dependent on slow-changing state are nested inside the condition block or cached when the state updates, completely eliminating redundant subshells from the fast path.
+## 2025-02-12 - Eliminating dead subshell fork/execs
+**Learning:** Leftover, overridden subshell assignments (like dead `awk` calls) inside high-frequency loops are hidden performance killers. Even if their output isn't used, they still fork and execute every tick, causing unnecessary CPU usage and potential stderr spam.
+**Action:** Rigorously prune dead code and unused subshell evaluations inside tight loops.
