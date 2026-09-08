@@ -268,9 +268,9 @@ while true; do
 
 	if [ -n "$VOL_RAW" ]; then
 		if [ "$MUTE_STATUS" = "yes" ]; then
-			VOL_INDICATOR=" <span color='$COLOR_BAT_LOW'>󰝟 </span><span color='$COLOR_TEXT'>muted (${VOL_RAW}%)</span>"
+			VOL_INDICATOR=" <span color='$COLOR_BAT_LOW'>󰝟 </span><span color='$COLOR_SEP'>Muted (${VOL_RAW}%)</span>"
 		elif [ "$VOL_RAW" -eq 0 ]; then
-			VOL_INDICATOR=" <span color='$COLOR_BAT_LOW'>󰝟 </span><span color='$COLOR_TEXT'>0%</span>"
+			VOL_INDICATOR=" <span color='$COLOR_BAT_LOW'>󰝟 </span><span color='$COLOR_SEP'>0%</span>"
 		else
 			if [ "$VOL_RAW" -gt 66 ]; then
 				VOL_ICON=" "

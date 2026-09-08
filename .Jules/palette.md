@@ -19,3 +19,6 @@
 ## 2024-10-07 - Contextual Warning Colors for Disconnected States
 **Learning:** Hard-coded warning text for disconnected states (e.g., "Not connected") can be overwhelming in bright or contrasting colors like white, adding to visual noise rather than clear communication.
 **Action:** Use dim or subtle colors for the text of a disconnected state to reduce visual noise, and reserve attention-grabbing colors (like red/critical) specifically for the icon itself to indicate the lack of connectivity at a glance.
+## 2025-02-12 - Dim Text for Disabled/Muted States
+**Learning:** Using high-contrast text for disabled or disconnected states (like a muted volume indicator) adds visual noise and competes with other active status elements.
+**Action:** Use dim or subtle colors for the text of muted or disconnected states, reserving warning colors specifically for the icon. This establishes a clear visual hierarchy and reduces visual clutter.
