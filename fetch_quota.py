@@ -10,18 +10,20 @@ import hashlib
 import subprocess
 from datetime import datetime
 
+# Styling setup respecting NO_COLOR
+if not os.environ.get("NO_COLOR") and sys.stderr.isatty():
+    C_ERROR = '\033[1;31m'
+    C_DIM = '\033[2m'
+    C_RESET = '\033[0m'
+else:
+    C_ERROR = ''
+    C_DIM = ''
+    C_RESET = ''
+
 # SECURITY: Prevent leaking stack traces when dependencies are missing.
 try:
     import secretstorage
 except ImportError:
-    if not os.environ.get("NO_COLOR") and sys.stderr.isatty():
-        C_ERROR = '\033[1;31m'
-        C_DIM = '\033[2m'
-        C_RESET = '\033[0m'
-    else:
-        C_ERROR = ''
-        C_DIM = ''
-        C_RESET = ''
     print(file=sys.stderr)
     print(f"{C_ERROR}[✖ ERROR]{C_RESET} Missing required dependency: secretstorage", file=sys.stderr)
     print(f"    {C_DIM}↳ Please install it (e.g., pip install secretstorage){C_RESET}", file=sys.stderr)
@@ -43,7 +45,10 @@ def get_client_secret():
             try:
                 st = os.stat(env_path)
                 if st.st_mode & 0o077:
-                    print(f"\033[1;31m[✖ ERROR]\033[0m Insecure permissions on {env_path}. File must not be readable by group/others. Run 'chmod 600 {env_path}'.", file=sys.stderr)
+                    print(file=sys.stderr)
+                    print(f"{C_ERROR}[✖ ERROR]{C_RESET} Insecure permissions on {env_path}", file=sys.stderr)
+                    print(f"    {C_DIM}↳ File must not be readable by group/others. Run 'chmod 600 {env_path}'{C_RESET}", file=sys.stderr)
+                    print(file=sys.stderr)
                     continue
             except Exception:
                 pass
