@@ -234,7 +234,10 @@ while true; do
 						MIN_C_EPOCH=$C_EPOCH
 					fi
 				done
-				read -r TOTAL_G TOTAL_C <<< $(awk "BEGIN {print $AWK_G_EXPR, $AWK_C_EXPR}")
+
+				# ⚡ Bolt Optimization: Removed dead 'awk' subshell execution here.
+				# Explicitly prune dead code and unused/overridden subshell assignments
+				# to eliminate expensive fork/exec overhead in this high-frequency loop.
 
 				TOTAL_G=$CACHED_TOTAL_G
 				TOTAL_C=$CACHED_TOTAL_C
