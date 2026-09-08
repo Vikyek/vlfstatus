@@ -234,7 +234,6 @@ while true; do
 						MIN_C_EPOCH=$C_EPOCH
 					fi
 				done
-				read -r TOTAL_G TOTAL_C <<< $(awk "BEGIN {print $AWK_G_EXPR, $AWK_C_EXPR}")
 
 				TOTAL_G=$CACHED_TOTAL_G
 				TOTAL_C=$CACHED_TOTAL_C
