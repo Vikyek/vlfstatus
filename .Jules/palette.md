@@ -22,3 +22,6 @@
 ## 2025-02-12 - Dim Text for Disabled/Muted States
 **Learning:** Using high-contrast text for disabled or disconnected states (like a muted volume indicator) adds visual noise and competes with other active status elements.
 **Action:** Use dim or subtle colors for the text of muted or disconnected states, reserving warning colors specifically for the icon. This establishes a clear visual hierarchy and reduces visual clutter.
+## 2024-11-20 - Prevent Layout Jitter in High-Frequency Updates
+**Learning:** In dynamically updating UI components like status bars, displaying unpadded countdown timers (e.g., `5m9s` to `5m10s`) causes the string width to change. This forces all subsequent elements in the layout to continuously jump back and forth, creating distracting visual noise.
+**Action:** Always zero-pad continuously updating numeric time units (minutes, seconds) to ensure a consistent character width and stable layout.
