@@ -35,8 +35,14 @@ while true; do
 	# ⚡ Bolt Optimization: Use bash built-ins for date formatting and reading files.
 	# Avoids expensive fork/exec of `date` and `cat` subprocesses every second.
 	printf -v DATETIME "%(%d %a %H:%M:%S)T" -1
-	# ⚡ Bolt Optimization: Use CLI-native formatting flag to avoid grep/sed fork/exec overhead
-	WIFI_RAW=$(nmcli -t -f GENERAL.CONNECTION dev show wlp8s0 2>/dev/null)
+	# ⚡ Bolt Optimization: Use CLI-native formatting flag to avoid grep/sed fork/exec overhead.
+	# Also avoid expensive nmcli subshell entirely when disconnected by checking sysfs first.
+	read -r WIFI_STATE 2>/dev/null < /sys/class/net/wlp8s0/operstate || WIFI_STATE="down"
+	if [[ "$WIFI_STATE" == "up" ]]; then
+		WIFI_RAW=$(nmcli -t -f GENERAL.CONNECTION dev show wlp8s0 2>/dev/null)
+	else
+		WIFI_RAW="--"
+	fi
 	if [[ "$WIFI_RAW" == "--" || -z "$WIFI_RAW" ]]; then
 		WIFI_ICON="󰤮 "
 		WIFI_TEXT="Not connected"
