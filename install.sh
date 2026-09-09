@@ -102,7 +102,6 @@ success "Scripts installed to ${C_BOLD}$HOME/.local/bin/${C_RESET}"
 
 step "5. Service Restart"
 # 5. Reload/restart i3 status bar
-step "Restarting Environment"
 info "Restarting i3 wm/bar to apply changes..."
 # Find active i3 socket
 I3_SOCKET=$(ls -1 /run/user/$(id -u)/i3/ipc-socket.* 2>/dev/null | head -n 1 || true)
