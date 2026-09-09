@@ -239,6 +239,7 @@ while true; do
 				# Explicitly prune dead code and unused/overridden subshell assignments
 				# to eliminate expensive fork/exec overhead in this high-frequency loop.
 
+
 				TOTAL_G=$CACHED_TOTAL_G
 				TOTAL_C=$CACHED_TOTAL_C
 
