@@ -57,7 +57,6 @@ if [ -n "$CONFIG_SRC" ]; then
             fi
         done < "$CONFIG_SRC"
     } > "$HOME/.config/vlfstatus/config"
-    
     success "Migration completed: variables saved to ${C_BOLD}$HOME/.config/vlfstatus/config${C_RESET}"
 else
     info "No legacy config found, skipping."
