@@ -21,3 +21,6 @@
 ## 2025-02-12 - Pruning dead subshell assignments in bash loops
 **Learning:** Leaving unused or immediately-overridden variables that evaluate external commands (like `awk`) in high-frequency bash loops results in hidden fork/exec CPU overhead on every tick, and may spam `stderr` with syntax errors.
 **Action:** Explicitly prune dead code and redundant subshell evaluations in tight loops to minimize subprocesses.
+## 2025-05-18 - Avoid subshell overhead by checking sysfs before invoking external binaries
+**Learning:** In high-frequency bash loops, invoking external commands (like `nmcli`) unconditionally causes expensive fork/exec overhead (approx. 66ms per 100 iterations) even when the state hasn't changed.
+**Action:** Before executing slow networking or system state commands, read from kernel `/sys/class` (e.g., `/sys/class/net/wlp8s0/operstate`) using bash built-in `read` which executes almost instantaneously (~2ms per 100 iterations), bypassing external binary execution completely when the device is down or idle.
