@@ -20,7 +20,7 @@ else
     C_DIM=''
 fi
 
-step() { echo -e "${C_DIM}---${C_RESET}\n${C_BOLD}$*${C_RESET}"; }
+step() { echo -e "\n${C_DIM}---${C_RESET}\n${C_BOLD}$*${C_RESET}"; }
 info() { echo -e "  ${C_INFO}•${C_RESET} $*"; }
 success() { echo -e "  ${C_SUCCESS}✔${C_RESET} $*"; }
 warn() { echo -e "  ${C_WARN}⚠${C_RESET} $*"; }
