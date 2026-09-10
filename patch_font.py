@@ -19,9 +19,10 @@ else:
     C_DIM = ''
     C_RESET = ''
 
-def info(msg): print(f"{C_INFO}[INFO]{C_RESET} {msg}")
-def success(msg): print(f"{C_SUCCESS}[✔]{C_RESET} {msg}")
-def error(msg): print(f"{C_ERROR}[✖ ERROR]{C_RESET} {msg}", file=sys.stderr)
+def step(msg): print(f"\n{C_DIM}---{C_RESET}\n{C_BOLD}{msg}{C_RESET}")
+def info(msg): print(f"  {C_INFO}•{C_RESET} {msg}")
+def success(msg): print(f"  {C_SUCCESS}✔{C_RESET} {msg}")
+def error(msg): print(f"  {C_ERROR}✖ ERROR:{C_RESET} {msg}", file=sys.stderr)
 def dim(msg): print(f"    {C_DIM}↳ {msg}{C_RESET}")
 
 try:
@@ -39,11 +40,11 @@ def patch():
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, "ShureTechMonoNerdFontPropo-Regular.ttf")
 
-    print()
+    step("1. Initialization")
     info(f"Opening font: {C_BOLD}{font_path}{C_RESET}")
     font = fontforge.open(font_path)
 
-    # 1. Patch Gemini (0xf1a0)
+    step("2. Patch Gemini (0xf1a0)")
     info("Importing Gemini SVG...")
     g_gemini = font[0xf1a0]
     g_gemini.clear()
@@ -69,8 +70,7 @@ def patch():
     g_gemini.width = 880
     dim(f"Final bbox: {g_gemini.boundingBox()}")
 
-    # 2. Patch Claude (0xf299)
-    print()
+    step("3. Patch Claude (0xf299)")
     info("Importing Claude SVG...")
     g_claude = font[0xf299]
     g_claude.clear()
@@ -91,11 +91,12 @@ def patch():
     g_claude.width = 880
     dim(f"Final bbox: {g_claude.boundingBox()}")
 
-    print()
+    step("4. Output Generation")
     info(f"Generating patched font at: {C_BOLD}{out_path}{C_RESET}")
     font.generate(out_path)
     info("Updating font cache...")
     subprocess.run(["/usr/bin/fc-cache", "-f"], check=True)
+
     print()
     success("Done patching font!")
     print()
