@@ -24,3 +24,6 @@
 ## 2025-05-18 - Avoid subshell overhead by checking sysfs before invoking external binaries
 **Learning:** In high-frequency bash loops, invoking external commands (like `nmcli`) unconditionally causes expensive fork/exec overhead (approx. 66ms per 100 iterations) even when the state hasn't changed.
 **Action:** Before executing slow networking or system state commands, read from kernel `/sys/class` (e.g., `/sys/class/net/wlp8s0/operstate`) using bash built-in `read` which executes almost instantaneously (~2ms per 100 iterations), bypassing external binary execution completely when the device is down or idle.
+## 2025-02-12 - Rate limiting and eliminating subshells in high-frequency loops
+**Learning:** Checking process statuses (like `pgrep` or `systemctl`) or using command substitution (`$(...)`) to format text in high-frequency bash loops (e.g. `while true; do ... sleep 1`) introduces hidden CPU overhead due to frequent fork/execs.
+**Action:** Use a TICK counter to rate-limit expensive external commands (e.g. `if (( TICK % 5 == 0 )); then`), and use `printf -v VARIABLE_NAME` instead of command substitution to update string output inside tight loops.
