@@ -17,3 +17,7 @@
 ## 2024-11-09 - Reusable setup script formatting pattern
 **Learning:** Found a reusable output formatting pattern for bash setup scripts using indented semantic symbols and dimmed step headers to dramatically improve readability and visual hierarchy, without requiring external dependencies like `tqdm` or `gum`.
 **Action:** Always prefer this lightweight `step()` + indented `info/success/warn` structure for bash scripts to increase scannability without breaking POSIX compatibility.
+
+## $(date +%Y-%m-%d) - Adding interactive progress to silent daemons
+**Learning:** Background daemons (like `fetch_quota.py`) often run completely silently to avoid polluting systemd logs. However, when a developer runs them manually to test or debug, the silence is unhelpful and causes confusion about whether the script is hanging.
+**Action:** Add dynamic, single-line progress indicators (using `\r` and `\033[K`) wrapped strictly in `if sys.stdout.isatty():` blocks. This provides immediate, readable UX for manual executions without breaking the necessary silence for machine-piped environments.

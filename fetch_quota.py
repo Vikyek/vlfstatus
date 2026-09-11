@@ -20,6 +20,21 @@ else:
     C_DIM = ''
     C_RESET = ''
 
+if not os.environ.get("NO_COLOR") and sys.stdout.isatty():
+    C_INFO_OUT = '\033[1;34m'
+    C_SUCCESS_OUT = '\033[1;32m'
+    C_WARN_OUT = '\033[1;33m'
+    C_BOLD_OUT = '\033[1m'
+    C_DIM_OUT = '\033[2m'
+    C_RESET_OUT = '\033[0m'
+else:
+    C_INFO_OUT = ''
+    C_SUCCESS_OUT = ''
+    C_WARN_OUT = ''
+    C_BOLD_OUT = ''
+    C_DIM_OUT = ''
+    C_RESET_OUT = ''
+
 # SECURITY: Prevent leaking stack traces when dependencies are missing.
 try:
     import secretstorage
@@ -155,7 +170,13 @@ def main():
     cache_dir = os.path.expanduser("~/.cache/token-conso")
     out_path = os.path.expanduser("~/.cache/agy_quota.json")
     
+    if sys.stdout.isatty():
+        print(f"\n{C_BOLD_OUT}🚀 Starting vlfstatus quota daemon{C_RESET_OUT}\n")
+
     while True:
+        if sys.stdout.isatty():
+            sys.stdout.write(f"\r  {C_INFO_OUT}⟳{C_RESET_OUT} {C_DIM_OUT}Fetching quota...{C_RESET_OUT}\033[K")
+            sys.stdout.flush()
         try:
             current_data = {}
             if os.path.exists(out_path):
@@ -170,13 +191,21 @@ def main():
             if acc_output:
                 output = {"accounts": [acc_output], "last_updated_epoch": int(time.time())}
                 write_output_json(out_path, output)
+                if sys.stdout.isatty():
+                    sys.stdout.write(f"\r  {C_SUCCESS_OUT}✔{C_RESET_OUT} Quota cached successfully\033[K\n")
+                    sys.stdout.flush()
             else:
                 # Keep existing data alive if fetch failed temporarily
                 if current_data:
                     current_data["last_updated_epoch"] = int(time.time())
                     write_output_json(out_path, current_data)
+                if sys.stdout.isatty():
+                    sys.stdout.write(f"\r  {C_WARN_OUT}⚠{C_RESET_OUT} Fetch failed, retained existing data\033[K\n")
+                    sys.stdout.flush()
         except Exception:
-            pass
+            if sys.stdout.isatty():
+                sys.stdout.write(f"\r  {C_WARN_OUT}⚠{C_RESET_OUT} Unexpected error during fetch\033[K\n")
+                sys.stdout.flush()
 
         time.sleep(30)
 
