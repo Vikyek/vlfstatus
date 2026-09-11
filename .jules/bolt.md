@@ -27,3 +27,7 @@
 ## 2025-02-12 - Rate limiting and eliminating subshells in high-frequency loops
 **Learning:** Checking process statuses (like `pgrep` or `systemctl`) or using command substitution (`$(...)`) to format text in high-frequency bash loops (e.g. `while true; do ... sleep 1`) introduces hidden CPU overhead due to frequent fork/execs.
 **Action:** Use a TICK counter to rate-limit expensive external commands (e.g. `if (( TICK % 5 == 0 )); then`), and use `printf -v VARIABLE_NAME` instead of command substitution to update string output inside tight loops.
+
+## 2024-05-18 - Eliminating stat fork/exec with bash built-in file tests
+**Learning:** Using `stat -c %Y file` to check file modification times inside a high-frequency loop introduces significant CPU overhead due to fork/execing a subshell and an external command on every tick.
+**Action:** Replace `stat` checks with bash's built-in file test operator `-nt` (newer than) against a marker file (e.g., `[[ data_file -nt marker_file ]] && touch marker_file`). This completely bypasses subprocess execution, dramatically improving efficiency in tight loops.

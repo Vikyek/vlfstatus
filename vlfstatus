@@ -12,6 +12,10 @@ fi
 
 pgrep -f "python3 $FETCH_QUOTA_PATH" >/dev/null || python3 "$FETCH_QUOTA_PATH" >/dev/null 2>&1 &
 
+# Cleanup marker file on exit
+trap 'rm -f ~/.cache/vlfstatus_quota_marker_$$; exit' INT TERM
+trap 'rm -f ~/.cache/vlfstatus_quota_marker_$$' EXIT
+
 echo "{ \"version\": 1 }"
 echo "["
 echo "[]"
@@ -112,11 +116,11 @@ while true; do
 
 	QUOTA_TEXT=""
 	if command -v agy >/dev/null 2>&1 && [ -f ~/.cache/agy_quota.json ]; then
-		# ⚡ Bolt Optimization: Cache JSON parsing by tracking file mtime.
+		# ⚡ Bolt Optimization: Cache JSON parsing by tracking file mtime using bash built-ins.
+		# Replaced `stat -c %Y` subshell with `-nt` test against a marker file to eliminate fork/exec overhead.
 		# Avoids executing 9 expensive `grep` subprocesses every second.
-		CURRENT_QUOTA_MTIME=$(stat -c %Y ~/.cache/agy_quota.json 2>/dev/null)
-		if [ "$CURRENT_QUOTA_MTIME" != "$LAST_QUOTA_MTIME" ]; then
-			LAST_QUOTA_MTIME=$CURRENT_QUOTA_MTIME
+		if [[ ~/.cache/agy_quota.json -nt ~/.cache/vlfstatus_quota_marker_$$ ]] || [[ ! -f ~/.cache/vlfstatus_quota_marker_$$ ]]; then
+			touch ~/.cache/vlfstatus_quota_marker_$$
 
 			G_5H_ARR=($(grep -oP '"gemini_5h": "\K[0-9.]+' ~/.cache/agy_quota.json))
 			G_WK_ARR=($(grep -oP '"gemini_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json))
