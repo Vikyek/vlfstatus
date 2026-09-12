@@ -169,7 +169,7 @@ while true; do
 				if [ $AGE -ge 60 ]; then
 					AGE_M=$((AGE / 60))
 					AGE_S=$((AGE % 60))
-					printf -v AGE_TXT "%dm%02ds" "$AGE_M" "$AGE_S"
+					printf -v AGE_TXT "%02dm%02ds" "$AGE_M" "$AGE_S"
 				else
 					printf -v AGE_TXT "%02ds" "$AGE"
 				fi
@@ -188,12 +188,12 @@ while true; do
 						if [ $H -gt 24 ]; then
 							local D=$((H / 24))
 							H=$((H % 24))
-							printf -v FORMATTED_RESET_TIME "%dd%02dh" "$D" "$H"
+							printf -v FORMATTED_RESET_TIME "%02dd%02dh" "$D" "$H"
 						else
-							printf -v FORMATTED_RESET_TIME "%dh%02dm" "$H" "$M"
+							printf -v FORMATTED_RESET_TIME "%02dh%02dm" "$H" "$M"
 						fi
 					else
-						printf -v FORMATTED_RESET_TIME "%dm%02ds" "$M" "$S"
+						printf -v FORMATTED_RESET_TIME "%02dm%02ds" "$M" "$S"
 					fi
 				fi
 			}
