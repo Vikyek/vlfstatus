@@ -169,7 +169,7 @@ while true; do
 					AGE_S=$((AGE % 60))
 					printf -v AGE_TXT "%02dm%02ds" "$AGE_M" "$AGE_S"
 				else
-					printf -v AGE_TXT "%02ds" "$AGE"
+					printf -v AGE_TXT "00m%02ds" "$AGE"
 				fi
 				REFRESH_TXT=" <span color='$AGE_COLOR'>⟳ ${AGE_TXT}</span>"
 			fi
@@ -177,7 +177,7 @@ while true; do
 			function format_reset_time() {
 				local SEC=$1
 				if [ $SEC -le 0 ]; then
-					FORMATTED_RESET_TIME="00s"
+					FORMATTED_RESET_TIME="00m00s"
 				else
 					local H=$((SEC / 3600))
 					local M=$(((SEC % 3600) / 60))
