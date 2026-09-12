@@ -17,3 +17,6 @@
 ## 2024-11-09 - Reusable setup script formatting pattern
 **Learning:** Found a reusable output formatting pattern for bash setup scripts using indented semantic symbols and dimmed step headers to dramatically improve readability and visual hierarchy, without requiring external dependencies like `tqdm` or `gum`.
 **Action:** Always prefer this lightweight `step()` + indented `info/success/warn` structure for bash scripts to increase scannability without breaking POSIX compatibility.
+## 2025-02-12 - Appending line-clear sequence for carriage-returns
+**Learning:** When using a carriage-return (`\r`) to create an in-place terminal progress counter, if the loop contains other logs or if subsequent messages are shorter, the trailing characters from previous outputs will remain and garble the terminal output.
+**Action:** Always append an ANSI line-clear escape sequence (e.g., `\033[K`) when outputting `\r` updates to ensure clean rendering.
