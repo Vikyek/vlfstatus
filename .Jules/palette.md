@@ -25,3 +25,7 @@
 ## 2024-11-20 - Prevent Layout Jitter in High-Frequency Updates
 **Learning:** In dynamically updating UI components like status bars, displaying unpadded countdown timers (e.g., `5m9s` to `5m10s`) causes the string width to change. This forces all subsequent elements in the layout to continuously jump back and forth, creating distracting visual noise.
 **Action:** Always zero-pad continuously updating numeric time units (minutes, seconds) to ensure a consistent character width and stable layout.
+
+## 2026-09-12 - Prevent Layout Jitter in High-Frequency Updates
+**Learning:** In dynamically updating UI components like status bars, displaying unpadded countdown timers causes the string width to change. This forces all subsequent elements in the layout to continuously jump back and forth, creating distracting visual noise.
+**Action:** Always zero-pad continuously updating numeric time units (minutes, seconds) to ensure a consistent character width and stable layout.

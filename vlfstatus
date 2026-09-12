@@ -188,7 +188,7 @@ while true; do
 						if [ $H -gt 24 ]; then
 							local D=$((H / 24))
 							H=$((H % 24))
-							printf -v FORMATTED_RESET_TIME "%dd%02dh" "$D" "$H"
+							printf -v FORMATTED_RESET_TIME "%02dd%02dh" "$D" "$H"
 						else
 							printf -v FORMATTED_RESET_TIME "%02dh%02dm" "$H" "$M"
 						fi
