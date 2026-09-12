@@ -15,10 +15,12 @@ if not os.environ.get("NO_COLOR") and sys.stderr.isatty():
     C_ERROR = '\033[1;31m'
     C_DIM = '\033[2m'
     C_RESET = '\033[0m'
+    C_CLEAR = '\033[K'
 else:
     C_ERROR = ''
     C_DIM = ''
     C_RESET = ''
+    C_CLEAR = ''
 
 # SECURITY: Prevent leaking stack traces when dependencies are missing.
 try:
@@ -155,7 +157,14 @@ def main():
     cache_dir = os.path.expanduser("~/.cache/token-conso")
     out_path = os.path.expanduser("~/.cache/agy_quota.json")
     
+    cycle_count = 0
     while True:
+        cycle_count += 1
+        if sys.stdout.isatty():
+            now = datetime.now().strftime("%H:%M:%S")
+            sys.stdout.write(f"\r{C_DIM}  [{now}] Quota daemon active | Cycles: {cycle_count}{C_RESET}{C_CLEAR}")
+            sys.stdout.flush()
+
         try:
             current_data = {}
             if os.path.exists(out_path):
