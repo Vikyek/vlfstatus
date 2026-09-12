@@ -147,8 +147,8 @@ while true; do
 					TOTAL_G_EXPR="$TOTAL_G_EXPR + ${G5H:-0}"
 					TOTAL_C_EXPR="$TOTAL_C_EXPR + ${C5H:-0}"
 				done
-				CACHED_TOTAL_G=$(awk "BEGIN {val=($TOTAL_G_EXPR)/$LAST_NUM_ACCOUNTS; if (val == int(val)) printf \"%d\", val; else printf \"%.1f\", val}")
-				CACHED_TOTAL_C=$(awk "BEGIN {val=($TOTAL_C_EXPR)/$LAST_NUM_ACCOUNTS; if (val == int(val)) printf \"%d\", val; else printf \"%.1f\", val}")
+				CACHED_TOTAL_G=$(awk -v expr="$TOTAL_G_EXPR" -v count="$LAST_NUM_ACCOUNTS" 'BEGIN { val = 0; split(expr, parts, "+"); for (i in parts) { val += parts[i] }; val = val / count; if (val == int(val)) printf "%d", val; else printf "%.1f", val}')
+				CACHED_TOTAL_C=$(awk -v expr="$TOTAL_C_EXPR" -v count="$LAST_NUM_ACCOUNTS" 'BEGIN { val = 0; split(expr, parts, "+"); for (i in parts) { val += parts[i] }; val = val / count; if (val == int(val)) printf "%d", val; else printf "%.1f", val}')
 			fi
 		fi
 
