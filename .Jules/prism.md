@@ -20,3 +20,7 @@
 ## 2025-02-12 - Appending line-clear sequence for carriage-returns
 **Learning:** When using a carriage-return (`\r`) to create an in-place terminal progress counter, if the loop contains other logs or if subsequent messages are shorter, the trailing characters from previous outputs will remain and garble the terminal output.
 **Action:** Always append an ANSI line-clear escape sequence (e.g., `\033[K`) when outputting `\r` updates to ensure clean rendering.
+
+## 2026-09-13 - Immediate Error Command Context
+**Learning:** When bash scripts fail and rely on a global `ERR` trap to catch exceptions, simply printing the line number of the failure (e.g. `$LINENO`) forces the developer to manually open the source file to figure out what went wrong. This breaks immediate console feedback.
+**Action:** Use the `$BASH_COMMAND` built-in variable inside global bash `ERR` traps to instantly print the exact command that failed directly to the console.
