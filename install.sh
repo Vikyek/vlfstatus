@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# SECURITY: Prevent execution as root to avoid Local Privilege Escalation (LPE).
+if [ "$EUID" -eq 0 ]; then
+    echo "Error: This script must not be run as root." >&2
+    exit 1
+fi
+
 # Color setup supporting NO_COLOR
 if [ -z "${NO_COLOR}" ] && [ -t 1 ]; then
     C_RESET='\033[0m'
