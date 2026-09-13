@@ -26,7 +26,7 @@ success() { echo -e "  ${C_SUCCESS}✔${C_RESET} $*"; }
 warn() { echo -e "  ${C_WARN}⚠${C_RESET} $*"; }
 error() { echo -e "  ${C_ERROR}✖ ERROR:${C_RESET} $*" >&2; }
 
-trap 'error "Installation failed at line $LINENO (exit code $?)"' ERR
+trap 'error "Installation failed on command: \`${C_BOLD}$BASH_COMMAND${C_RESET}\` at line $LINENO (exit code $?)"' ERR
 
 echo -e "\n${C_BOLD}🚀 Starting vlfstatus installation${C_RESET}"
 
