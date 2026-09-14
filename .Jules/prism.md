@@ -24,3 +24,7 @@
 ## 2026-09-13 - Immediate Error Command Context
 **Learning:** When bash scripts fail and rely on a global `ERR` trap to catch exceptions, simply printing the line number of the failure (e.g. `$LINENO`) forces the developer to manually open the source file to figure out what went wrong. This breaks immediate console feedback.
 **Action:** Use the `$BASH_COMMAND` built-in variable inside global bash `ERR` traps to instantly print the exact command that failed directly to the console.
+
+## 2025-02-12 - Handling KeyboardInterrupt gracefully
+**Learning:** Python daemons that loop continuously often get killed manually by users (via SIGINT / Ctrl+C). By default, this spews an ugly and unhelpful stack trace of the `time.sleep` call which clutters the terminal.
+**Action:** Always wrap the `main()` entrypoint of CLI daemons in a `try/except KeyboardInterrupt` block and print a clean, semantic shutdown message (e.g., "Daemon stopped by user") instead of letting the raw exception crash to standard error.

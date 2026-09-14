@@ -190,4 +190,10 @@ def main():
         time.sleep(30)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        if sys.stdout.isatty():
+            print()
+            print(f"  {C_DIM}↳ Daemon stopped by user{C_RESET}")
+        sys.exit(0)
