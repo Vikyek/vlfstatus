@@ -190,4 +190,9 @@ def main():
         time.sleep(30)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print(file=sys.stderr)
+        print(f"  {C_DIM}↳ Quota daemon stopped manually.{C_RESET}", file=sys.stderr)
+        sys.exit(0)
