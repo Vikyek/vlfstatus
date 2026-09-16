@@ -190,4 +190,10 @@ def main():
         time.sleep(30)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        # SECURITY: Prevent raw stack traces from leaking to the console on SIGINT
+        print(file=sys.stderr)
+        print(f"{C_DIM}  [Shutdown] Quota daemon gracefully terminated.{C_RESET}{C_CLEAR}", file=sys.stderr)
+        sys.exit(0)
