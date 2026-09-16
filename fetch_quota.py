@@ -12,12 +12,18 @@ from datetime import datetime
 
 # Styling setup respecting NO_COLOR
 if not os.environ.get("NO_COLOR") and sys.stderr.isatty():
+    C_INFO = '\033[1;34m'
+    C_SUCCESS = '\033[1;32m'
     C_ERROR = '\033[1;31m'
+    C_BOLD = '\033[1m'
     C_DIM = '\033[2m'
     C_RESET = '\033[0m'
     C_CLEAR = '\033[K'
 else:
+    C_INFO = ''
+    C_SUCCESS = ''
     C_ERROR = ''
+    C_BOLD = ''
     C_DIM = ''
     C_RESET = ''
     C_CLEAR = ''
@@ -27,7 +33,7 @@ try:
     import secretstorage
 except ImportError:
     print(file=sys.stderr)
-    print(f"{C_ERROR}[✖ ERROR]{C_RESET} Missing required dependency: secretstorage", file=sys.stderr)
+    print(f"  {C_ERROR}✖ ERROR:{C_RESET} Missing required dependency: secretstorage", file=sys.stderr)
     print(f"    {C_DIM}↳ Please install it (e.g., pip install secretstorage){C_RESET}", file=sys.stderr)
     print(file=sys.stderr)
     sys.exit(1)
@@ -48,7 +54,7 @@ def get_client_secret():
                 st = os.stat(env_path)
                 if st.st_mode & 0o077:
                     print(file=sys.stderr)
-                    print(f"{C_ERROR}[✖ ERROR]{C_RESET} Insecure permissions on {env_path}", file=sys.stderr)
+                    print(f"  {C_ERROR}✖ ERROR:{C_RESET} Insecure permissions on {C_BOLD}{env_path}{C_RESET}", file=sys.stderr)
                     print(f"    {C_DIM}↳ File must not be readable by group/others. Run 'chmod 600 {env_path}'{C_RESET}", file=sys.stderr)
                     print(file=sys.stderr)
                     continue
@@ -162,7 +168,7 @@ def main():
         cycle_count += 1
         if sys.stdout.isatty():
             now = datetime.now().strftime("%H:%M:%S")
-            sys.stdout.write(f"\r{C_DIM}  [{now}] Quota daemon active | Cycles: {cycle_count}{C_RESET}{C_CLEAR}")
+            sys.stdout.write(f"\r  {C_INFO}•{C_RESET}{C_DIM} [{now}] Quota daemon active | Cycles: {cycle_count}{C_RESET}{C_CLEAR}")
             sys.stdout.flush()
 
         try:
@@ -195,5 +201,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         # SECURITY: Prevent raw stack traces from leaking to the console on SIGINT
         print(file=sys.stderr)
-        print(f"{C_DIM}  [Shutdown] Quota daemon gracefully terminated.{C_RESET}{C_CLEAR}", file=sys.stderr)
+        print(f"  {C_SUCCESS}✔{C_RESET} {C_DIM}Quota daemon gracefully terminated.{C_RESET}{C_CLEAR}", file=sys.stderr)
         sys.exit(0)
