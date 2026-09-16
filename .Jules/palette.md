@@ -29,3 +29,11 @@
 ## 2026-09-12 - Prevent Layout Jitter in High-Frequency Updates
 **Learning:** In dynamically updating UI components like status bars, displaying unpadded countdown timers causes the string width to change. This forces all subsequent elements in the layout to continuously jump back and forth, creating distracting visual noise.
 **Action:** Always zero-pad continuously updating numeric time units (minutes, seconds) to ensure a consistent character width and stable layout.
+
+## 2024-11-20 - Highlight Over-Amplification
+**Learning:** Users might accidentally increase system volume above 100% (over-amplification), leading to audio clipping or hardware damage. A purely numerical indicator doesn't visually communicate the risk of entering this threshold.
+**Action:** Apply a warning color to the volume icon when the value exceeds 100% to provide immediate visual feedback of over-amplification without requiring the user to interpret the number.
+
+## 2024-11-20 - Semantic Date Formatting
+**Learning:** Date formats that place the day of the month before the day of the week (e.g., "16 Mon") break standard cognitive reading patterns, increasing the mental parsing effort required to read the status bar.
+**Action:** Always format dates using a natural semantic order (e.g., "Mon 16 Sep") to reduce cognitive load and improve scannability.
