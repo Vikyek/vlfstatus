@@ -29,3 +29,7 @@
 ## 2026-09-12 - Prevent Layout Jitter in High-Frequency Updates
 **Learning:** In dynamically updating UI components like status bars, displaying unpadded countdown timers causes the string width to change. This forces all subsequent elements in the layout to continuously jump back and forth, creating distracting visual noise.
 **Action:** Always zero-pad continuously updating numeric time units (minutes, seconds) to ensure a consistent character width and stable layout.
+
+## 2026-09-16 - Natural Semantic Date Ordering
+**Learning:** Formatting dates in concise UI components like status bars with unnatural ordering (e.g., "16 Mon") increases cognitive parsing effort as users are accustomed to natural language phrasing.
+**Action:** When displaying dates in tight UI components, prefer natural semantic ordering (e.g., "Mon 16 Sep") to minimize cognitive load.
