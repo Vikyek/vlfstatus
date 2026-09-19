@@ -44,7 +44,8 @@ while true; do
 			while IFS='=' read -r key val || [ -n "$key" ]; do
 				[[ -z "$key" || "$key" == \#* ]] && continue
 				key="${key//[[:space:]]/}"
-				if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+				# SECURITY: Prevent Arbitrary Variable Overwrite (CWE-473) by strictly allowlisting valid keys
+				if [[ "$key" =~ ^(COLOR_[a-zA-Z0-9_]+|MULTI_ACCOUNT_MODE)$ ]]; then
 					val="${val%\"}"
 					val="${val#\"}"
 					val="${val%\'}"
