@@ -24,3 +24,6 @@
 ## 2026-09-13 - Immediate Error Command Context
 **Learning:** When bash scripts fail and rely on a global `ERR` trap to catch exceptions, simply printing the line number of the failure (e.g. `$LINENO`) forces the developer to manually open the source file to figure out what went wrong. This breaks immediate console feedback.
 **Action:** Use the `$BASH_COMMAND` built-in variable inside global bash `ERR` traps to instantly print the exact command that failed directly to the console.
+## 2024-09-20 - Prevent double-spaced jagged output in setup scripts
+**Learning:** Nesting visual separator functions (like `step()` which injects blank lines) inside conditional execution paths causes unpredictable, double-spaced jagged output if multiple conditions are met consecutively.
+**Action:** Always use a single primary section header outside conditionals, and fall back to indented semantic list items (like `info()`) for sub-tasks within conditional blocks to maintain a clean visual hierarchy.
