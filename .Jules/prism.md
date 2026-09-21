@@ -24,3 +24,6 @@
 ## 2026-09-13 - Immediate Error Command Context
 **Learning:** When bash scripts fail and rely on a global `ERR` trap to catch exceptions, simply printing the line number of the failure (e.g. `$LINENO`) forces the developer to manually open the source file to figure out what went wrong. This breaks immediate console feedback.
 **Action:** Use the `$BASH_COMMAND` built-in variable inside global bash `ERR` traps to instantly print the exact command that failed directly to the console.
+## 2024-09-21 - Removing nested separators in bash scripts
+**Learning:** Nested separator functions (like `step()`) create double-spaced, jagged output and disrupt the visual hierarchy.
+**Action:** Avoid nesting separator functions or calling them consecutively; use a single primary section header and fall back to indented list items for sub-tasks.
