@@ -305,14 +305,20 @@ while true; do
 		elif [ "$VOL_RAW" -eq 0 ]; then
 			VOL_INDICATOR=" <span color='$COLOR_BAT_LOW'>󰝟 </span><span color='$COLOR_SEP'>0%</span>"
 		else
-			if [ "$VOL_RAW" -gt 66 ]; then
+			if [ "$VOL_RAW" -gt 100 ]; then
 				VOL_ICON=" "
+				VOL_COLOR="$COLOR_BAT_LOW"
+			elif [ "$VOL_RAW" -gt 66 ]; then
+				VOL_ICON=" "
+				VOL_COLOR="$COLOR_TIME"
 			elif [ "$VOL_RAW" -gt 33 ]; then
 				VOL_ICON=" "
+				VOL_COLOR="$COLOR_TIME"
 			else
 				VOL_ICON=" "
+				VOL_COLOR="$COLOR_TIME"
 			fi
-			VOL_INDICATOR=" <span color='$COLOR_TIME'>${VOL_ICON}</span><span color='$COLOR_TEXT'>${VOL_RAW}%</span>"
+			VOL_INDICATOR=" <span color='$VOL_COLOR'>${VOL_ICON}</span><span color='$COLOR_TEXT'>${VOL_RAW}%</span>"
 		fi
 	fi
 
