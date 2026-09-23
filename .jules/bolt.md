@@ -31,3 +31,6 @@
 ## 2025-02-12 - Eliminate Subshell Overhead with bash built-in -nt
 **Learning:** Checking file modification time (`stat -c %Y`) on every tick inside a high-frequency bash loop forks a subprocess every second, causing overhead and unnecessary CPU usage.
 **Action:** Replace `stat -c %Y` with bash built-in file test operator `[ file -nt marker ]`. Update the `marker` file using `touch` only when the target file actually changes, entirely eliminating the per-second fork/exec overhead.
+## 2025-02-12 - Caching Line-By-Line Configuration Parsing in High-Frequency Bash Loops
+**Learning:** Even without external subshells, reading and parsing configuration files line-by-line using built-in `read` and regex (`=~`) inside a tight `while true` loop causes measurable CPU overhead and layout delay when run continuously.
+**Action:** Always cache file reading and parsing logic by checking file modification times using bash's built-in `-nt` operator (e.g., `[ config -nt marker ]`), drastically reducing execution time per tick.
