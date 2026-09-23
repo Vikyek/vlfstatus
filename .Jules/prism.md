@@ -24,3 +24,7 @@
 ## 2026-09-13 - Immediate Error Command Context
 **Learning:** When bash scripts fail and rely on a global `ERR` trap to catch exceptions, simply printing the line number of the failure (e.g. `$LINENO`) forces the developer to manually open the source file to figure out what went wrong. This breaks immediate console feedback.
 **Action:** Use the `$BASH_COMMAND` built-in variable inside global bash `ERR` traps to instantly print the exact command that failed directly to the console.
+
+## 2024-09-23 - Prevent Double-Spaced Jagged CLI Output
+**Learning:** Nesting or calling separator UI functions consecutively (like `step()` in setup scripts) creates jagged, double-spaced output and broken visual hierarchy.
+**Action:** Avoid nesting step headers. Use a single primary section header and fall back to indented list items (e.g., `info()`) for sub-tasks.
