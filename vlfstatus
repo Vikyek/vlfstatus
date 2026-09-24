@@ -30,30 +30,53 @@ TICK=0
 while true; do
 	TICK=$((TICK + 1))
 
-	COLOR_WIFI="#FF0055"
-	COLOR_BAT_HIGH="#FF0055"
-	COLOR_BAT_MID="#FF0055"
-	COLOR_BAT_LOW="#FF0055"
-	COLOR_TIME="#FF0055"
-	COLOR_TEXT="#FFFFFF"
-	COLOR_SEP="#0DCDCD"
+	# ⚡ Bolt Optimization: Cache bash line-by-line configuration parsing
+	# Reading files in a tight loop has measurable overhead. Cache using file mtime.
+	# We check for file deletion/creation (-e and != logic) and modification (-nt).
+	REPARSE=0
+	if [ ~/.cache/bar_colors.sh -nt ~/.cache/vlfstatus_cfg.marker ] 2>/dev/null || [ ~/.config/vlfstatus/config -nt ~/.cache/vlfstatus_cfg.marker ] 2>/dev/null || [ ! -f ~/.cache/vlfstatus_cfg.marker ]; then
+		REPARSE=1
+	else
+		# Check if files were deleted or created since last parse
+		[ -e ~/.cache/bar_colors.sh ] && CACHE_EXISTS=1 || CACHE_EXISTS=0
+		[ -e ~/.config/vlfstatus/config ] && CFG_EXISTS=1 || CFG_EXISTS=0
 
-	# SECURITY: Safely parse configuration files instead of sourcing them to prevent arbitrary code execution
-	for cfg_file in ~/.cache/bar_colors.sh ~/.config/vlfstatus/config; do
-		if [ -f "$cfg_file" ]; then
-			while IFS='=' read -r key val || [ -n "$key" ]; do
-				[[ -z "$key" || "$key" == \#* ]] && continue
-				key="${key//[[:space:]]/}"
-				if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-					val="${val%\"}"
-					val="${val#\"}"
-					val="${val%\'}"
-					val="${val#\'}"
-					printf -v "$key" "%s" "$val"
-				fi
-			done < "$cfg_file"
+		# If our known state differs from current existence, we must reparse
+		if [[ "${LAST_CACHE_EXISTS:-}" != "$CACHE_EXISTS" ]] || [[ "${LAST_CFG_EXISTS:-}" != "$CFG_EXISTS" ]]; then
+			REPARSE=1
 		fi
-	done
+	fi
+
+	if [ "$REPARSE" -eq 1 ]; then
+		touch ~/.cache/vlfstatus_cfg.marker 2>/dev/null || true
+		LAST_CACHE_EXISTS=$([ -e ~/.cache/bar_colors.sh ] && echo 1 || echo 0)
+		LAST_CFG_EXISTS=$([ -e ~/.config/vlfstatus/config ] && echo 1 || echo 0)
+
+		COLOR_WIFI="#FF0055"
+		COLOR_BAT_HIGH="#FF0055"
+		COLOR_BAT_MID="#FF0055"
+		COLOR_BAT_LOW="#FF0055"
+		COLOR_TIME="#FF0055"
+		COLOR_TEXT="#FFFFFF"
+		COLOR_SEP="#0DCDCD"
+
+		# SECURITY: Safely parse configuration files instead of sourcing them to prevent arbitrary code execution
+		for cfg_file in ~/.cache/bar_colors.sh ~/.config/vlfstatus/config; do
+			if [ -f "$cfg_file" ]; then
+				while IFS='=' read -r key val || [ -n "$key" ]; do
+					[[ -z "$key" || "$key" == \#* ]] && continue
+					key="${key//[[:space:]]/}"
+					if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+						val="${val%\"}"
+						val="${val#\"}"
+						val="${val%\'}"
+						val="${val#\'}"
+						printf -v "$key" "%s" "$val"
+					fi
+				done < "$cfg_file"
+			fi
+		done
+	fi
 
 	# ⚡ Bolt Optimization: Use bash built-ins for date formatting and reading files.
 	# Avoids expensive fork/exec of `date` and `cat` subprocesses every second.
