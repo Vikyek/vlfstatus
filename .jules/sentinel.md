@@ -52,3 +52,8 @@
 **Vulnerability:** The bash script `vlfstatus` loaded user configuration and color caches (`~/.config/vlfstatus/config` and `~/.cache/bar_colors.sh`) using the `source` command. Since `source` evaluates file contents as bash commands in the current shell, any malicious code injected into these files (e.g. by another application or downloaded script) would be executed with the user's privileges, leading to arbitrary code execution.
 **Learning:** Sourcing untrusted or externally modifiable configuration files in bash scripts is a dangerous pattern because it does not distinguish between variable assignments and executable commands.
 **Prevention:** Instead of `source`, read configuration files safely using a `while read` loop, validate keys against a strict regex (e.g., `^[a-zA-Z_][a-zA-Z0-9_]*$`), sanitize values by stripping quotes, and assign them using `printf -v "$key" "%s" "$val"` to prevent any code evaluation.
+
+## 2026-09-17 - Prevent Arbitrary Variable Overwrite (CWE-473) in Config Parsing
+**Vulnerability:** Using an overly permissive generic regex (like `^[a-zA-Z_][a-zA-Z0-9_]*$`) for key validation when parsing config files allows arbitrary environment or internal variables to be overwritten.
+**Learning:** A generic bash variable regex instead of a strict allowlist can lead to CWE-473 (Arbitrary Variable Overwrite), which can be manipulated to change the script's behavior or execute unintended commands (e.g., modifying `PATH`).
+**Prevention:** When reading config files manually, always validate keys against a strict, explicit allowlist regular expression (e.g., `^(COLOR_[a-zA-Z0-9_]+|MULTI_ACCOUNT_MODE)$`) before using `printf -v` to assign them.
