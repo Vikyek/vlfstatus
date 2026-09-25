@@ -24,3 +24,6 @@
 ## 2026-09-13 - Immediate Error Command Context
 **Learning:** When bash scripts fail and rely on a global `ERR` trap to catch exceptions, simply printing the line number of the failure (e.g. `$LINENO`) forces the developer to manually open the source file to figure out what went wrong. This breaks immediate console feedback.
 **Action:** Use the `$BASH_COMMAND` built-in variable inside global bash `ERR` traps to instantly print the exact command that failed directly to the console.
+## 2024-05-18 - Standardizing Early Bash Validation UX
+**Learning:** Early execution checks (like EUID validation) in bash scripts often trigger bare echo statements because they are placed at the very top of the file, before UI helpers and ANSI colors are declared.
+**Action:** Always declare visual hierarchy variables and UI helper functions (like `error()`) at the very top of the script, before any early execution checks, to ensure all validation errors can use the standardized UI formatting.
