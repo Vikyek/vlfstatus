@@ -31,3 +31,6 @@
 ## 2025-02-12 - Eliminate Subshell Overhead with bash built-in -nt
 **Learning:** Checking file modification time (`stat -c %Y`) on every tick inside a high-frequency bash loop forks a subprocess every second, causing overhead and unnecessary CPU usage.
 **Action:** Replace `stat -c %Y` with bash built-in file test operator `[ file -nt marker ]`. Update the `marker` file using `touch` only when the target file actually changes, entirely eliminating the per-second fork/exec overhead.
+## 2024-09-25 - Caching Built-in Logic
+**Learning:** Even without external subshells, reading and parsing configuration files line-by-line using built-in `read` and regex (`=~`) inside a tight bash `while true` loop causes measurable CPU overhead. Supplementing `-nt` modification checks with existence checks (`-e`) correctly handles cache invalidation when target files are unexpectedly deleted or created.
+**Action:** Cache high-frequency built-in bash parsing blocks using modification time (`-nt`) and file existence markers.
