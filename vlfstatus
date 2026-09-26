@@ -312,7 +312,11 @@ while true; do
 			else
 				VOL_ICON=" "
 			fi
-			VOL_INDICATOR=" <span color='$COLOR_TIME'>${VOL_ICON}</span><span color='$COLOR_TEXT'>${VOL_RAW}%</span>"
+			if [ "$VOL_RAW" -gt 100 ]; then
+				VOL_INDICATOR=" <span color='$COLOR_BAT_LOW'>${VOL_ICON}</span><span color='$COLOR_BAT_LOW'>${VOL_RAW}%</span>"
+			else
+				VOL_INDICATOR=" <span color='$COLOR_TIME'>${VOL_ICON}</span><span color='$COLOR_TEXT'>${VOL_RAW}%</span>"
+			fi
 		fi
 	fi
 
