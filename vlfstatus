@@ -26,34 +26,45 @@ LAST_NUM_ACCOUNTS=0
 LAST_UPDATED=""
 APP_INDICATORS=""
 TICK=0
+LAST_CFG_STATE=""
 
 while true; do
 	TICK=$((TICK + 1))
 
-	COLOR_WIFI="#FF0055"
-	COLOR_BAT_HIGH="#FF0055"
-	COLOR_BAT_MID="#FF0055"
-	COLOR_BAT_LOW="#FF0055"
-	COLOR_TIME="#FF0055"
-	COLOR_TEXT="#FFFFFF"
-	COLOR_SEP="#0DCDCD"
+	CFG_STATE=""
+	[ -e ~/.cache/bar_colors.sh ] && CFG_STATE="${CFG_STATE}1" || CFG_STATE="${CFG_STATE}0"
+	[ -e ~/.config/vlfstatus/config ] && CFG_STATE="${CFG_STATE}1" || CFG_STATE="${CFG_STATE}0"
 
-	# SECURITY: Safely parse configuration files instead of sourcing them to prevent arbitrary code execution
-	for cfg_file in ~/.cache/bar_colors.sh ~/.config/vlfstatus/config; do
-		if [ -f "$cfg_file" ]; then
-			while IFS='=' read -r key val || [ -n "$key" ]; do
-				[[ -z "$key" || "$key" == \#* ]] && continue
-				key="${key//[[:space:]]/}"
-				if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-					val="${val%\"}"
-					val="${val#\"}"
-					val="${val%\'}"
-					val="${val#\'}"
-					printf -v "$key" "%s" "$val"
-				fi
-			done < "$cfg_file"
-		fi
-	done
+	# ⚡ Bolt Optimization: Cache configuration parsing using file mtime built-in `-nt`.
+	if [ "$CFG_STATE" != "$LAST_CFG_STATE" ] || [ ~/.cache/bar_colors.sh -nt ~/.cache/vlfstatus_cfg.marker ] 2>/dev/null || [ ~/.config/vlfstatus/config -nt ~/.cache/vlfstatus_cfg.marker ] 2>/dev/null || [ ! -e ~/.cache/vlfstatus_cfg.marker ] 2>/dev/null; then
+		LAST_CFG_STATE="$CFG_STATE"
+		touch ~/.cache/vlfstatus_cfg.marker 2>/dev/null || true
+
+		COLOR_WIFI="#FF0055"
+		COLOR_BAT_HIGH="#FF0055"
+		COLOR_BAT_MID="#FF0055"
+		COLOR_BAT_LOW="#FF0055"
+		COLOR_TIME="#FF0055"
+		COLOR_TEXT="#FFFFFF"
+		COLOR_SEP="#0DCDCD"
+
+		# SECURITY: Safely parse configuration files instead of sourcing them to prevent arbitrary code execution
+		for cfg_file in ~/.cache/bar_colors.sh ~/.config/vlfstatus/config; do
+			if [ -f "$cfg_file" ]; then
+				while IFS='=' read -r key val || [ -n "$key" ]; do
+					[[ -z "$key" || "$key" == \#* ]] && continue
+					key="${key//[[:space:]]/}"
+					if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+						val="${val%\"}"
+						val="${val#\"}"
+						val="${val%\'}"
+						val="${val#\'}"
+						printf -v "$key" "%s" "$val"
+					fi
+				done < "$cfg_file"
+			fi
+		done
+	fi
 
 	# ⚡ Bolt Optimization: Use bash built-ins for date formatting and reading files.
 	# Avoids expensive fork/exec of `date` and `cat` subprocesses every second.
