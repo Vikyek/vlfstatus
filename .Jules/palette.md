@@ -33,3 +33,6 @@
 ## 2026-09-16 - Natural Semantic Date Ordering
 **Learning:** Formatting dates in concise UI components like status bars with unnatural ordering (e.g., "16 Mon") increases cognitive parsing effort as users are accustomed to natural language phrasing.
 **Action:** When displaying dates in tight UI components, prefer natural semantic ordering (e.g., "Mon 16 Sep") to minimize cognitive load.
+## 2024-09-27 - Volume Over-Amplification Warning
+**Learning:** Users lack immediate visual feedback when audio volume is pushed beyond 100%, which can lead to clipping, distortion, or hardware strain.
+**Action:** Apply warning colors (e.g., $COLOR_BAT_LOW) to the volume icon when output exceeds 100% to clearly indicate over-amplification risks.
