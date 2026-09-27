@@ -56,3 +56,7 @@
 **Vulnerability:** Generic regex in config parser allowed arbitrary variable overwrites, risking PATH injection.
 **Learning:** Never use a generic regex (like `^[a-zA-Z_][a-zA-Z0-9_]*$`) when parsing config files into variables.
 **Prevention:** Use a strict, explicit allowlist regex (e.g., `^(COLOR_[a-zA-Z0-9_]+|MULTI_ACCOUNT_MODE)$`) before `printf -v`.
+## 2024-09-27 - Arbitrary Variable Overwrite via printf -v
+**Vulnerability:** Configuration parser uses generic bash variable regex before using printf -v to assign variables, allowing arbitrary code execution or variable overwrites (CWE-473).
+**Learning:** Never use generic regexes `^[a-zA-Z_][a-zA-Z0-9_]*$` with `printf -v`.
+**Prevention:** Validate keys against a strict, explicit allowlist regular expression (e.g., `^(COLOR_[a-zA-Z0-9_]+|MULTI_ACCOUNT_MODE)$`) when loading config files.
