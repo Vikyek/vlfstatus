@@ -1,8 +1,19 @@
 #!/bin/bash
 
+# Color setup supporting NO_COLOR
+if [ -z "${NO_COLOR}" ] && [ -t 2 ]; then
+    C_RESET='\033[0m'
+    C_ERROR='\033[1;31m'
+else
+    C_RESET=''
+    C_ERROR=''
+fi
+
+error() { echo -e "  ${C_ERROR}✖ ERROR:${C_RESET} $*" >&2; }
+
 # SECURITY: Prevent execution as root to avoid Local Privilege Escalation (LPE).
 if [ "$EUID" -eq 0 ]; then
-    echo "Error: This script must not be run as root." >&2
+    error "This script must not be run as root."
     exit 1
 fi
 
