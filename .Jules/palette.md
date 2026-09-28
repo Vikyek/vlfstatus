@@ -36,3 +36,6 @@
 ## 2024-09-27 - Volume Over-Amplification Warning
 **Learning:** Users lack immediate visual feedback when audio volume is pushed beyond 100%, which can lead to clipping, distortion, or hardware strain.
 **Action:** Apply warning colors (e.g., $COLOR_BAT_LOW) to the volume icon when output exceeds 100% to clearly indicate over-amplification risks.
+## 2024-09-28 - Semantic Default Colors
+**Learning:** Hardcoding all default fallback theme colors to a critical/warning color (like pure red) creates visual fatigue and false alarms, forcing users to constantly check if there is an actual problem or just a missing configuration file.
+**Action:** Always provide semantically appropriate default colors (e.g., green for healthy battery, neutral colors for time) to ensure the interface is immediately usable and informative even before user customization.
