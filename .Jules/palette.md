@@ -36,6 +36,9 @@
 ## 2024-09-27 - Volume Over-Amplification Warning
 **Learning:** Users lack immediate visual feedback when audio volume is pushed beyond 100%, which can lead to clipping, distortion, or hardware strain.
 **Action:** Apply warning colors (e.g., $COLOR_BAT_LOW) to the volume icon when output exceeds 100% to clearly indicate over-amplification risks.
+## 2024-05-24 - Semantic Default Colors for Status Themes
+**Learning:** When designing status bars or UI themes with configurable colors, hardcoding the default/fallback colors to a critical or warning color (like pure red) causes visual fatigue and false alarms when user configurations are missing.
+**Action:** Always provide semantically appropriate default colors (e.g., green for healthy states, neutral for time or separators) to prevent false alarms and improve scannability.
 ## 2024-11-22 - Semantic Fallback Colors
 **Learning:** Hardcoding default or fallback colors to a critical or warning color (like pure red) causes false alarms and visual fatigue for users when their configurations are missing or fail to load.
 **Action:** Always provide semantically appropriate default colors (e.g., green for healthy states, neutral for time or separators) to prevent user anxiety and maintain a clear visual hierarchy.
