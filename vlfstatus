@@ -31,43 +31,31 @@ LAST_CFG_STATE=""
 while true; do
 	TICK=$((TICK + 1))
 
-	# ⚡ Bolt Optimization: Cache configuration parsing to avoid built-in CPU overhead every second
-	CURRENT_CFG_STATE=""
-	for cfg_file in ~/.cache/bar_colors.sh ~/.config/vlfstatus/config; do
-		if [ -f "$cfg_file" ]; then
-			CURRENT_CFG_STATE="${CURRENT_CFG_STATE}1"
-		else
-			CURRENT_CFG_STATE="${CURRENT_CFG_STATE}0"
-		fi
-	done
+	# ⚡ Bolt Optimization: Cache configuration parsing using modification times and explicit state tracking
+	# to eliminate line-by-line reading and regex evaluation overhead in this high-frequency loop.
+	CFG_STATE=""
+	[ -f "$HOME/.cache/bar_colors.sh" ] && CFG_STATE="${CFG_STATE}1" || CFG_STATE="${CFG_STATE}0"
+	[ -f "$HOME/.config/vlfstatus/config" ] && CFG_STATE="${CFG_STATE}1" || CFG_STATE="${CFG_STATE}0"
 
-	NEEDS_PARSE=0
-	if [ "$CURRENT_CFG_STATE" != "$LAST_CFG_STATE" ]; then
-		NEEDS_PARSE=1
-	else
-		for cfg_file in ~/.cache/bar_colors.sh ~/.config/vlfstatus/config; do
-			if [ -f "$cfg_file" ]; then
-				if [ "$cfg_file" -nt "$cfg_file.marker" ] 2>/dev/null || [ ! -f "$cfg_file.marker" ]; then
-					NEEDS_PARSE=1
-					break
-				fi
-			fi
-		done
-	fi
+	if [ "$CFG_STATE" != "$LAST_CFG_STATE" ] || \
+	   [ "$HOME/.cache/bar_colors.sh" -nt "$HOME/.cache/vlfstatus_cfg.marker" ] 2>/dev/null || \
+	   [ "$HOME/.config/vlfstatus/config" -nt "$HOME/.cache/vlfstatus_cfg.marker" ] 2>/dev/null || \
+	   [ ! -f "$HOME/.cache/vlfstatus_cfg.marker" ]; then
 
-	if [ "$NEEDS_PARSE" -eq 1 ]; then
-		COLOR_WIFI="#FF0055"
-		COLOR_BAT_HIGH="#FF0055"
-		COLOR_BAT_MID="#FF0055"
+		touch "$HOME/.cache/vlfstatus_cfg.marker" 2>/dev/null || true
+		LAST_CFG_STATE="$CFG_STATE"
+
+		COLOR_WIFI="#00E5FF"
+		COLOR_BAT_HIGH="#00FF7F"
+		COLOR_BAT_MID="#FFD700"
 		COLOR_BAT_LOW="#FF0055"
-		COLOR_TIME="#FF0055"
+		COLOR_TIME="#00E5FF"
 		COLOR_TEXT="#FFFFFF"
 		COLOR_SEP="#0DCDCD"
 
 		# SECURITY: Safely parse configuration files instead of sourcing them to prevent arbitrary code execution
 		for cfg_file in ~/.cache/bar_colors.sh ~/.config/vlfstatus/config; do
 			if [ -f "$cfg_file" ]; then
-				touch "$cfg_file.marker" 2>/dev/null || true
 				while IFS='=' read -r key val || [ -n "$key" ]; do
 					[[ -z "$key" || "$key" == \#* ]] && continue
 					key="${key//[[:space:]]/}"
@@ -81,7 +69,6 @@ while true; do
 				done < "$cfg_file"
 			fi
 		done
-		LAST_CFG_STATE="$CURRENT_CFG_STATE"
 	fi
 
 	# ⚡ Bolt Optimization: Use bash built-ins for date formatting and reading files.
