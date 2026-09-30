@@ -45,13 +45,13 @@ while true; do
 		touch "$HOME/.cache/vlfstatus_cfg.marker" 2>/dev/null || true
 		LAST_CFG_STATE="$CFG_STATE"
 
-		COLOR_WIFI="#FF0055"
-		COLOR_BAT_HIGH="#FF0055"
-		COLOR_BAT_MID="#FF0055"
-		COLOR_BAT_LOW="#FF0055"
-		COLOR_TIME="#FF0055"
-		COLOR_TEXT="#FFFFFF"
-		COLOR_SEP="#0DCDCD"
+		COLOR_WIFI="#00E5FF"
+    COLOR_BAT_HIGH="#00FF7F"
+    COLOR_BAT_MID="#FFD700"
+    COLOR_BAT_LOW="#FF0055"
+    COLOR_TIME="#00E5FF"
+    COLOR_TEXT="#FFFFFF"
+    COLOR_SEP="#0DCDCD"
 
 		# SECURITY: Safely parse configuration files instead of sourcing them to prevent arbitrary code execution
 		for cfg_file in ~/.cache/bar_colors.sh ~/.config/vlfstatus/config; do
