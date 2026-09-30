@@ -39,3 +39,6 @@
 ## 2024-05-24 - Semantic Default Colors for Status Themes
 **Learning:** When designing status bars or UI themes with configurable colors, hardcoding the default/fallback colors to a critical or warning color (like pure red) causes visual fatigue and false alarms when user configurations are missing.
 **Action:** Always provide semantically appropriate default colors (e.g., green for healthy states, neutral for time or separators) to prevent false alarms and improve scannability.
+## 2024-11-22 - Semantic Fallback Colors
+**Learning:** Hardcoding default or fallback colors to a critical or warning color (like pure red) causes false alarms and visual fatigue for users when their configurations are missing or fail to load.
+**Action:** Always provide semantically appropriate default colors (e.g., green for healthy states, neutral for time or separators) to prevent user anxiety and maintain a clear visual hierarchy.
