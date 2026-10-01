@@ -60,3 +60,8 @@
 **Vulnerability:** Configuration parser uses generic bash variable regex before using printf -v to assign variables, allowing arbitrary code execution or variable overwrites (CWE-473).
 **Learning:** Never use generic regexes `^[a-zA-Z_][a-zA-Z0-9_]*$` with `printf -v`.
 **Prevention:** Validate keys against a strict, explicit allowlist regular expression (e.g., `^(COLOR_[a-zA-Z0-9_]+|MULTI_ACCOUNT_MODE)$`) when loading config files.
+
+## 2026-10-01 - Removed Hardcoded Google Client ID
+**Vulnerability:** A hardcoded Google API `client_id` was present in `fetch_quota.py`.
+**Learning:** Hardcoding sensitive or identity information such as client IDs in source code exposes them to misuse or impersonation if the repository becomes public.
+**Prevention:** Always load identity credentials from secure sources such as environment variables (e.g., `os.environ.get`), secure configuration files, or secret management services instead of hardcoding them in the codebase.
