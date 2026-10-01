@@ -38,10 +38,10 @@ except ImportError:
     print(file=sys.stderr)
     sys.exit(1)
 
-def get_client_secret():
-    secret = os.environ.get("GOOGLE_CLIENT_SECRET")
-    if secret:
-        return secret
+def get_credential(key_name):
+    val = os.environ.get(key_name)
+    if val:
+        return val
     
     env_paths = [
         os.path.expanduser("~/.gemini/config/.vault_credentials.env"),
@@ -65,17 +65,25 @@ def get_client_secret():
                 with open(env_path, "r") as f:
                     for line in f:
                         line = line.strip()
-                        if line.startswith("GOOGLE_CLIENT_SECRET="):
-                            val = line.split("=", 1)[1].strip("\"'")
-                            if val:
-                                return val
+                        if line.startswith(f"{key_name}="):
+                            found_val = line.split("=", 1)[1].strip("\"'")
+                            if found_val:
+                                return found_val
             except Exception:
                 pass
     return None
 
+def get_client_secret():
+    return get_credential("GOOGLE_CLIENT_SECRET")
+
+def get_client_id():
+    return get_credential("GOOGLE_CLIENT_ID")
+
 def refresh_token(ref_token):
     url = "https://oauth2.googleapis.com/token"
-    client_id = "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
+    client_id = get_client_id()
+    if not client_id:
+        raise ValueError("Missing GOOGLE_CLIENT_ID in environment or vault credentials")
 
     client_secret = get_client_secret()
     if not client_secret:
