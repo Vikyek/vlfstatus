@@ -39,3 +39,6 @@
 ## 2024-09-28 - Semantic Default Colors
 **Learning:** Hardcoding all default fallback theme colors to a critical/warning color (like pure red) creates visual fatigue and false alarms, forcing users to constantly check if there is an actual problem or just a missing configuration file.
 **Action:** Always provide semantically appropriate default colors (e.g., green for healthy battery, neutral colors for time) to ensure the interface is immediately usable and informative even before user customization.
+## 2024-10-15 - Semantics of Connectivity Colors
+**Learning:** Defaulting a connected state icon (like Wi-Fi) to a critical warning color (red) creates continuous user anxiety, as users instantly associate red with a disconnected or error state even if the text indicates a successful connection.
+**Action:** Always map positive or active connection states to semantically safe colors (e.g., green or cyan) by default, reserving red strictly for disconnected or error states.
