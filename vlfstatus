@@ -45,7 +45,7 @@ while true; do
 		touch "$HOME/.cache/vlfstatus_cfg.marker" 2>/dev/null || true
 		LAST_CFG_STATE="$CFG_STATE"
 
-		COLOR_WIFI="#FF0055"
+		COLOR_WIFI="#00E5FF"
     COLOR_BAT_HIGH="#00FF7F"
     COLOR_BAT_MID="#FFD700"
     COLOR_BAT_LOW="#FF0055"
