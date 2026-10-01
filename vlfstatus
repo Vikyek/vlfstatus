@@ -78,7 +78,9 @@ while true; do
 	# Also avoid expensive nmcli subshell entirely when disconnected by checking sysfs first.
 	read -r WIFI_STATE 2>/dev/null < /sys/class/net/wlp8s0/operstate || WIFI_STATE="down"
 	if [[ "$WIFI_STATE" == "up" ]]; then
-		WIFI_RAW=$(nmcli -t -f GENERAL.CONNECTION dev show wlp8s0 2>/dev/null)
+		if (( TICK % 5 == 2 )) || [[ -z "$WIFI_RAW" || "$WIFI_RAW" == "--" ]]; then
+			WIFI_RAW=$(nmcli -t -f GENERAL.CONNECTION dev show wlp8s0 2>/dev/null)
+		fi
 	else
 		WIFI_RAW="--"
 	fi
@@ -164,7 +166,7 @@ while true; do
 			C_WK_EPOCH_ARR=($(grep -oP '"claude_weekly_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
 
 			LAST_NUM_ACCOUNTS=${#G_5H_ARR[@]}
-			LAST_UPDATED=$(grep -oP '"last_updated_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json | head -n1)
+			LAST_UPDATED=$(grep -m 1 -oP '"last_updated_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json)
 
 			# Pre-calculate TOTAL_G and TOTAL_C for combined mode to avoid fork/exec per second
 			if [ "$LAST_NUM_ACCOUNTS" -gt 0 ]; then
