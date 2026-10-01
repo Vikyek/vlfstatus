@@ -54,7 +54,7 @@ while true; do
     COLOR_SEP="#0DCDCD"
 
 		# SECURITY: Safely parse configuration files instead of sourcing them to prevent arbitrary code execution
-		for cfg_file in ~/.cache/bar_colors.sh ~/.config/vlfstatus/config; do
+		for cfg_file in "$HOME"/.cache/bar_colors.sh "$HOME"/.config/vlfstatus/config; do
 			if [ -f "$cfg_file" ]; then
 				while IFS='=' read -r key val || [ -n "$key" ]; do
 					[[ -z "$key" || "$key" == \#* ]] && continue
@@ -147,24 +147,24 @@ while true; do
 	fi
 
 	QUOTA_TEXT=""
-	if command -v agy >/dev/null 2>&1 && [ -f ~/.cache/agy_quota.json ]; then
+	if command -v agy >/dev/null 2>&1 && [ -f "$HOME"/.cache/agy_quota.json ]; then
 		# ⚡ Bolt Optimization: Cache JSON parsing by tracking file mtime using bash built-in `-nt`.
 		# Avoids executing `stat` and 9 expensive `grep` subprocesses every second.
-		if [ ~/.cache/agy_quota.json -nt ~/.cache/agy_quota.marker ] 2>/dev/null || [ ! -f ~/.cache/agy_quota.marker ]; then
-			touch ~/.cache/agy_quota.marker 2>/dev/null || true
+		if [ "$HOME"/.cache/agy_quota.json -nt "$HOME"/.cache/agy_quota.marker ] 2>/dev/null || [ ! -f "$HOME"/.cache/agy_quota.marker ]; then
+			touch "$HOME"/.cache/agy_quota.marker 2>/dev/null || true
 
-			G_5H_ARR=($(grep -oP '"gemini_5h": "\K[0-9.]+' ~/.cache/agy_quota.json))
-			G_WK_ARR=($(grep -oP '"gemini_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json))
-			C_5H_ARR=($(grep -oP '"claude_5h": "\K[0-9.]+' ~/.cache/agy_quota.json))
-			C_WK_ARR=($(grep -oP '"claude_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json))
+			G_5H_ARR=($(grep -oP '"gemini_5h": "\K[0-9.]+' "$HOME"/.cache/agy_quota.json))
+			G_WK_ARR=($(grep -oP '"gemini_weekly": "\K[0-9.]+' "$HOME"/.cache/agy_quota.json))
+			C_5H_ARR=($(grep -oP '"claude_5h": "\K[0-9.]+' "$HOME"/.cache/agy_quota.json))
+			C_WK_ARR=($(grep -oP '"claude_weekly": "\K[0-9.]+' "$HOME"/.cache/agy_quota.json))
 
-			G_5H_EPOCH_ARR=($(grep -oP '"gemini_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
-			G_WK_EPOCH_ARR=($(grep -oP '"gemini_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
-			C_5H_EPOCH_ARR=($(grep -oP '"claude_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
-			C_WK_EPOCH_ARR=($(grep -oP '"claude_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
+			G_5H_EPOCH_ARR=($(grep -oP '"gemini_5h_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
+			G_WK_EPOCH_ARR=($(grep -oP '"gemini_weekly_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
+			C_5H_EPOCH_ARR=($(grep -oP '"claude_5h_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
+			C_WK_EPOCH_ARR=($(grep -oP '"claude_weekly_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
 
 			LAST_NUM_ACCOUNTS=${#G_5H_ARR[@]}
-			LAST_UPDATED=$(grep -oP '"last_updated_epoch": \K[0-9]+' ~/.cache/agy_quota.json | head -n1)
+			LAST_UPDATED=$(grep -oP '"last_updated_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json | head -n1)
 
 			# Pre-calculate TOTAL_G and TOTAL_C for combined mode to avoid fork/exec per second
 			if [ "$LAST_NUM_ACCOUNTS" -gt 0 ]; then

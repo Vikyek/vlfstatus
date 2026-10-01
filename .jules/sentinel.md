@@ -65,3 +65,7 @@
 **Vulnerability:** A hardcoded Google API `client_id` was present in `fetch_quota.py`.
 **Learning:** Hardcoding sensitive or identity information such as client IDs in source code exposes them to misuse or impersonation if the repository becomes public.
 **Prevention:** Always load identity credentials from secure sources such as environment variables (e.g., `os.environ.get`), secure configuration files, or secret management services instead of hardcoding them in the codebase.
+## 2024-10-01 - Prevent Path Word Splitting
+**Vulnerability:** Bash scripts like `vlfstatus` used unquoted tilde expansions (e.g., `~/.cache/bar_colors.sh`) in `for` loops and file tests. If a user's home directory path contains spaces, the path will undergo word splitting, leading to incorrect file resolution and potentially exposing the script to unintended behavior or path traversal/manipulation.
+**Learning:** Tilde expansion `~` should not be used in contexts where the resulting path might contain spaces and is not protected by quotes.
+**Prevention:** Always use safely quoted paths with the `$HOME` variable (e.g., `"$HOME/.cache/file"`) instead of unquoted tildes to prevent word splitting vulnerabilities.
