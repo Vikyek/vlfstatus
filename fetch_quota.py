@@ -172,36 +172,41 @@ def main():
     out_path = os.path.expanduser("~/.cache/agy_quota.json")
     
     cycle_count = 0
-    while True:
-        cycle_count += 1
-        if sys.stdout.isatty():
-            now = datetime.now().strftime("%H:%M:%S")
-            sys.stdout.write(f"\r  {C_INFO}•{C_RESET}{C_DIM} [{now}] Quota daemon active | Cycles: {cycle_count}{C_RESET}{C_CLEAR}")
-            sys.stdout.flush()
+    try:
+        while True:
+            cycle_count += 1
+            if sys.stdout.isatty():
+                now = datetime.now().strftime("%H:%M:%S")
+                sys.stdout.write(f"\r{C_DIM}  [{now}] Quota daemon active | Cycles: {cycle_count}{C_RESET}{C_CLEAR}")
+                sys.stdout.flush()
 
-        try:
-            current_data = {}
-            if os.path.exists(out_path):
-                try:
-                    with open(out_path, "r") as f:
-                        current_data = json.load(f)
-                except Exception:
-                    pass
+            try:
+                current_data = {}
+                if os.path.exists(out_path):
+                    try:
+                        with open(out_path, "r") as f:
+                            current_data = json.load(f)
+                    except Exception:
+                        pass
 
-            # 1. Primary: fetch via agy CLI
-            acc_output = fetch_quota_from_agy_cli()
-            if acc_output:
-                output = {"accounts": [acc_output], "last_updated_epoch": int(time.time())}
-                write_output_json(out_path, output)
-            else:
-                # Keep existing data alive if fetch failed temporarily
-                if current_data:
-                    current_data["last_updated_epoch"] = int(time.time())
-                    write_output_json(out_path, current_data)
-        except Exception:
-            pass
+                # 1. Primary: fetch via agy CLI
+                acc_output = fetch_quota_from_agy_cli()
+                if acc_output:
+                    output = {"accounts": [acc_output], "last_updated_epoch": int(time.time())}
+                    write_output_json(out_path, output)
+                else:
+                    # Keep existing data alive if fetch failed temporarily
+                    if current_data:
+                        current_data["last_updated_epoch"] = int(time.time())
+                        write_output_json(out_path, current_data)
+            except Exception:
+                pass
 
-        time.sleep(30)
+            time.sleep(30)
+    except KeyboardInterrupt:
+        print(file=sys.stderr)
+        print(f"  {C_DIM}↳ Quota daemon stopped cleanly by user.{C_RESET}", file=sys.stderr)
+        sys.exit(0)
 
 if __name__ == "__main__":
     try:
