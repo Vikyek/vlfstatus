@@ -12,12 +12,18 @@ from datetime import datetime
 
 # Styling setup respecting NO_COLOR
 if not os.environ.get("NO_COLOR") and sys.stderr.isatty():
+    C_INFO = '\033[1;34m'
+    C_SUCCESS = '\033[1;32m'
     C_ERROR = '\033[1;31m'
+    C_BOLD = '\033[1m'
     C_DIM = '\033[2m'
     C_RESET = '\033[0m'
     C_CLEAR = '\033[K'
 else:
+    C_INFO = ''
+    C_SUCCESS = ''
     C_ERROR = ''
+    C_BOLD = ''
     C_DIM = ''
     C_RESET = ''
     C_CLEAR = ''
@@ -27,15 +33,15 @@ try:
     import secretstorage
 except ImportError:
     print(file=sys.stderr)
-    print(f"{C_ERROR}[✖ ERROR]{C_RESET} Missing required dependency: secretstorage", file=sys.stderr)
+    print(f"  {C_ERROR}✖ ERROR:{C_RESET} Missing required dependency: secretstorage", file=sys.stderr)
     print(f"    {C_DIM}↳ Please install it (e.g., pip install secretstorage){C_RESET}", file=sys.stderr)
     print(file=sys.stderr)
     sys.exit(1)
 
-def get_client_secret():
-    secret = os.environ.get("GOOGLE_CLIENT_SECRET")
-    if secret:
-        return secret
+def get_credential(key_name):
+    val = os.environ.get(key_name)
+    if val:
+        return val
     
     env_paths = [
         os.path.expanduser("~/.gemini/config/.vault_credentials.env"),
@@ -48,7 +54,7 @@ def get_client_secret():
                 st = os.stat(env_path)
                 if st.st_mode & 0o077:
                     print(file=sys.stderr)
-                    print(f"{C_ERROR}[✖ ERROR]{C_RESET} Insecure permissions on {env_path}", file=sys.stderr)
+                    print(f"  {C_ERROR}✖ ERROR:{C_RESET} Insecure permissions on {C_BOLD}{env_path}{C_RESET}", file=sys.stderr)
                     print(f"    {C_DIM}↳ File must not be readable by group/others. Run 'chmod 600 {env_path}'{C_RESET}", file=sys.stderr)
                     print(file=sys.stderr)
                     continue
@@ -59,17 +65,25 @@ def get_client_secret():
                 with open(env_path, "r") as f:
                     for line in f:
                         line = line.strip()
-                        if line.startswith("GOOGLE_CLIENT_SECRET="):
-                            val = line.split("=", 1)[1].strip("\"'")
-                            if val:
-                                return val
+                        if line.startswith(f"{key_name}="):
+                            found_val = line.split("=", 1)[1].strip("\"'")
+                            if found_val:
+                                return found_val
             except Exception:
                 pass
     return None
 
+def get_client_secret():
+    return get_credential("GOOGLE_CLIENT_SECRET")
+
+def get_client_id():
+    return get_credential("GOOGLE_CLIENT_ID")
+
 def refresh_token(ref_token):
     url = "https://oauth2.googleapis.com/token"
-    client_id = "1071006060591-tmhssin2h21lcre235vtolojh4g403ep.apps.googleusercontent.com"
+    client_id = get_client_id()
+    if not client_id:
+        raise ValueError("Missing GOOGLE_CLIENT_ID in environment or vault credentials")
 
     client_secret = get_client_secret()
     if not client_secret:
@@ -195,4 +209,10 @@ def main():
         sys.exit(0)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        # SECURITY: Prevent raw stack traces from leaking to the console on SIGINT
+        print(file=sys.stderr)
+        print(f"  {C_SUCCESS}✔{C_RESET} {C_DIM}Quota daemon gracefully terminated.{C_RESET}{C_CLEAR}", file=sys.stderr)
+        sys.exit(0)

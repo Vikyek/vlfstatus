@@ -52,3 +52,24 @@
 **Vulnerability:** A script `fetch_quota.py` running as a continuous daemon lacked error handling for `SIGINT` (Ctrl+C). When executed manually and interrupted, it leaked internal stack traces and execution context to the console.
 **Learning:** Raw tracebacks leak internal application structure, file paths, and execution context. When a continuous script runs as a background daemon, unhandled exceptions can pollute system logs. Failing securely means abstracting away implementation details from the failure state.
 **Prevention:** Wrap the main continuous execution loops in `try/except KeyboardInterrupt` blocks. Output a clean, semantic shutdown message to standard error (`sys.stderr`) when caught, ensuring no tracebacks are exposed, and securely exit the process.
+## 2026-09-16 - Prevent Arbitrary Code Execution via Sourced Configuration Files
+**Vulnerability:** The bash script `vlfstatus` loaded user configuration and color caches (`~/.config/vlfstatus/config` and `~/.cache/bar_colors.sh`) using the `source` command. Since `source` evaluates file contents as bash commands in the current shell, any malicious code injected into these files (e.g. by another application or downloaded script) would be executed with the user's privileges, leading to arbitrary code execution.
+**Learning:** Sourcing untrusted or externally modifiable configuration files in bash scripts is a dangerous pattern because it does not distinguish between variable assignments and executable commands.
+**Prevention:** Instead of `source`, read configuration files safely using a `while read` loop, validate keys against a strict regex (e.g., `^[a-zA-Z_][a-zA-Z0-9_]*$`), sanitize values by stripping quotes, and assign them using `printf -v "$key" "%s" "$val"` to prevent any code evaluation.
+## 2024-05-23 - Prevent Arbitrary Variable Overwrite (CWE-473)
+**Vulnerability:** Generic regex in config parser allowed arbitrary variable overwrites, risking PATH injection.
+**Learning:** Never use a generic regex (like `^[a-zA-Z_][a-zA-Z0-9_]*$`) when parsing config files into variables.
+**Prevention:** Use a strict, explicit allowlist regex (e.g., `^(COLOR_[a-zA-Z0-9_]+|MULTI_ACCOUNT_MODE)$`) before `printf -v`.
+## 2024-09-27 - Arbitrary Variable Overwrite via printf -v
+**Vulnerability:** Configuration parser uses generic bash variable regex before using printf -v to assign variables, allowing arbitrary code execution or variable overwrites (CWE-473).
+**Learning:** Never use generic regexes `^[a-zA-Z_][a-zA-Z0-9_]*$` with `printf -v`.
+**Prevention:** Validate keys against a strict, explicit allowlist regular expression (e.g., `^(COLOR_[a-zA-Z0-9_]+|MULTI_ACCOUNT_MODE)$`) when loading config files.
+
+## 2026-10-01 - Removed Hardcoded Google Client ID
+**Vulnerability:** A hardcoded Google API `client_id` was present in `fetch_quota.py`.
+**Learning:** Hardcoding sensitive or identity information such as client IDs in source code exposes them to misuse or impersonation if the repository becomes public.
+**Prevention:** Always load identity credentials from secure sources such as environment variables (e.g., `os.environ.get`), secure configuration files, or secret management services instead of hardcoding them in the codebase.
+## 2024-10-01 - Prevent Path Word Splitting
+**Vulnerability:** Bash scripts like `vlfstatus` used unquoted tilde expansions (e.g., `~/.cache/bar_colors.sh`) in `for` loops and file tests. If a user's home directory path contains spaces, the path will undergo word splitting, leading to incorrect file resolution and potentially exposing the script to unintended behavior or path traversal/manipulation.
+**Learning:** Tilde expansion `~` should not be used in contexts where the resulting path might contain spaces and is not protected by quotes.
+**Prevention:** Always use safely quoted paths with the `$HOME` variable (e.g., `"$HOME/.cache/file"`) instead of unquoted tildes to prevent word splitting vulnerabilities.
