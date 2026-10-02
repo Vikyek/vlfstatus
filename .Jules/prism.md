@@ -17,3 +17,18 @@
 ## 2024-11-09 - Reusable setup script formatting pattern
 **Learning:** Found a reusable output formatting pattern for bash setup scripts using indented semantic symbols and dimmed step headers to dramatically improve readability and visual hierarchy, without requiring external dependencies like `tqdm` or `gum`.
 **Action:** Always prefer this lightweight `step()` + indented `info/success/warn` structure for bash scripts to increase scannability without breaking POSIX compatibility.
+## 2025-02-12 - Appending line-clear sequence for carriage-returns
+**Learning:** When using a carriage-return (`\r`) to create an in-place terminal progress counter, if the loop contains other logs or if subsequent messages are shorter, the trailing characters from previous outputs will remain and garble the terminal output.
+**Action:** Always append an ANSI line-clear escape sequence (e.g., `\033[K`) when outputting `\r` updates to ensure clean rendering.
+
+## 2026-09-13 - Immediate Error Command Context
+**Learning:** When bash scripts fail and rely on a global `ERR` trap to catch exceptions, simply printing the line number of the failure (e.g. `$LINENO`) forces the developer to manually open the source file to figure out what went wrong. This breaks immediate console feedback.
+**Action:** Use the `$BASH_COMMAND` built-in variable inside global bash `ERR` traps to instantly print the exact command that failed directly to the console.
+
+## 2024-11-20 - CLI UI Initialization Order
+**Learning:** If ANSI color constants and UI helper functions (like `error()`) are defined after early execution checks (like EUID validation), those checks are forced to use raw `echo` or `print` statements. This results in inconsistent and unformatted early-exit error messages.
+**Action:** Always declare ANSI color constants and CLI formatting helpers at the very top of scripts before any validation logic.
+
+## 2024-11-20 - Avoiding Nested Separators
+**Learning:** Using separator functions (like `step()` with blank lines) inside other sub-sections creates jagged, double-spaced terminal output that is hard to scan.
+**Action:** Use a single primary section header and fall back to indented list items (e.g. `info()`) for sub-tasks to maintain a clean visual hierarchy.

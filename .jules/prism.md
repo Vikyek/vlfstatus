@@ -1,0 +1,3 @@
+## 2025-01-01 - Standardize Reusable Output Formatting Pattern
+**Learning:** The codebase has an established CLI visual hierarchy using indented semantic symbols and conditionally applied raw ANSI codes (e.g. `step()`, `info()`, `success()`, `error()` functions in `install.sh` and `patch_font.py`). Specifically, errors use `  ✖ ERROR:`, successes use `  ✔`, and informational logs use `  •`.
+**Action:** When adding output or formatting to Python or Bash scripts, adhere to this standard. Specifically: use standard 2-space indentation before symbols, avoid bare `print` or `echo` statements for errors, and use `[bold]` or `{C_BOLD}` ANSI constants to highlight dynamic variables like file paths inside static log strings.
