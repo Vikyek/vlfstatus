@@ -1,12 +1,6 @@
 #!/bin/bash
 set -e
 
-# SECURITY: Prevent execution as root to avoid Local Privilege Escalation (LPE).
-if [ "$EUID" -eq 0 ]; then
-    echo "Error: This script must not be run as root." >&2
-    exit 1
-fi
-
 # Color setup supporting NO_COLOR
 if [ -z "${NO_COLOR}" ] && [ -t 1 ]; then
     C_RESET='\033[0m'
@@ -32,7 +26,19 @@ success() { echo -e "  ${C_SUCCESS}✔${C_RESET} $*"; }
 warn() { echo -e "  ${C_WARN}⚠${C_RESET} $*"; }
 error() { echo -e "  ${C_ERROR}✖ ERROR:${C_RESET} $*" >&2; }
 
+# SECURITY: Prevent execution as root to avoid Local Privilege Escalation (LPE).
+if [ "$EUID" -eq 0 ]; then
+    error "This script must not be run as root."
+    exit 1
+fi
+
 trap 'error "Installation failed on command: \`${C_BOLD}$BASH_COMMAND${C_RESET}\` at line $LINENO (exit code $?)"' ERR
+
+# SECURITY: Prevent execution as root to avoid Local Privilege Escalation (LPE).
+if [ "$EUID" -eq 0 ]; then
+    error "This script must not be run as root."
+    exit 1
+fi
 
 echo -e "\n${C_BOLD}🚀 Starting vlfstatus installation${C_RESET}"
 
@@ -46,7 +52,6 @@ elif [ -f "$HOME/.wlfstatusrc" ]; then
 fi
 
 if [ -n "$CONFIG_SRC" ]; then
-    step "Configuration Migration"
     info "Found legacy configuration at ${C_BOLD}$CONFIG_SRC${C_RESET}. Migrating..."
     # Ensure the new config directory exists
     mkdir -p "$HOME/.config/vlfstatus"
@@ -73,7 +78,6 @@ step "2. i3 / Sway Integration"
 I3_CONFIG="$HOME/.config/i3/config"
 if [ -f "$I3_CONFIG" ]; then
     if grep -q "status_command.*wlfstatus" "$I3_CONFIG"; then
-        step "Updating Window Manager Config"
         info "Updating i3 status command in ${C_BOLD}$I3_CONFIG${C_RESET}..."
         sed -i 's/status_command.*wlfstatus/status_command $HOME\/.local\/bin\/vlfstatus/g' "$I3_CONFIG"
         success "Updated i3 config"
@@ -87,7 +91,6 @@ fi
 step "3. Legacy Binaries"
 # 3. Remove old wlfstatus symlink or binary
 if [ -e "$HOME/.local/bin/wlfstatus" ] || [ -L "$HOME/.local/bin/wlfstatus" ]; then
-    step "Cleanup Legacy Executable"
     info "Removing legacy wlfstatus executable..."
     rm -f "$HOME/.local/bin/wlfstatus"
     success "Cleaned up old binaries"
