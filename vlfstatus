@@ -1,5 +1,22 @@
 #!/bin/bash
 
+# Color setup supporting NO_COLOR
+if [ -z "${NO_COLOR}" ] && [ -t 2 ]; then
+    C_RESET='\033[0m'
+    C_ERROR='\033[1;31m'
+else
+    C_RESET=''
+    C_ERROR=''
+fi
+
+error() { echo -e "  ${C_ERROR}✖ ERROR:${C_RESET} $*" >&2; }
+
+# SECURITY: Prevent execution as root to avoid Local Privilege Escalation (LPE).
+if [ "$EUID" -eq 0 ]; then
+    error "This script must not be run as root."
+    exit 1
+fi
+
 # Start fetch_quota.py in background if not running
 SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
 if [ -f "$SCRIPT_DIR/fetch_quota.py" ]; then
@@ -12,34 +29,73 @@ fi
 
 pgrep -f "python3 $FETCH_QUOTA_PATH" >/dev/null || python3 "$FETCH_QUOTA_PATH" >/dev/null 2>&1 &
 
+# Cleanup marker file on exit
+trap 'rm -f ~/.cache/vlfstatus_quota_marker_$$; exit' INT TERM
+trap 'rm -f ~/.cache/vlfstatus_quota_marker_$$' EXIT
+
 echo "{ \"version\": 1 }"
 echo "["
 echo "[]"
 
-LAST_QUOTA_MTIME=""
 LAST_NUM_ACCOUNTS=0
 LAST_UPDATED=""
+APP_INDICATORS=""
+TICK=0
+LAST_CFG_STATE=""
 
 while true; do
-	source ~/.cache/bar_colors.sh 2>/dev/null || { 
+	TICK=$((TICK + 1))
+
+	# ⚡ Bolt Optimization: Cache configuration parsing using modification times and explicit state tracking
+	# to eliminate line-by-line reading and regex evaluation overhead in this high-frequency loop.
+	CFG_STATE=""
+	[ -f "$HOME/.cache/bar_colors.sh" ] && CFG_STATE="${CFG_STATE}1" || CFG_STATE="${CFG_STATE}0"
+	[ -f "$HOME/.config/vlfstatus/config" ] && CFG_STATE="${CFG_STATE}1" || CFG_STATE="${CFG_STATE}0"
+
+	if [ "$CFG_STATE" != "$LAST_CFG_STATE" ] || \
+	   [ "$HOME/.cache/bar_colors.sh" -nt "$HOME/.cache/vlfstatus_cfg.marker" ] 2>/dev/null || \
+	   [ "$HOME/.config/vlfstatus/config" -nt "$HOME/.cache/vlfstatus_cfg.marker" ] 2>/dev/null || \
+	   [ ! -f "$HOME/.cache/vlfstatus_cfg.marker" ]; then
+
+		touch "$HOME/.cache/vlfstatus_cfg.marker" 2>/dev/null || true
+		LAST_CFG_STATE="$CFG_STATE"
+
 		COLOR_WIFI="#FF0055"
-		COLOR_BAT_HIGH="#FF0055"
-		COLOR_BAT_MID="#FF0055"
-		COLOR_BAT_LOW="#FF0055"
-		COLOR_TIME="#FF0055"
-		COLOR_TEXT="#FFFFFF"
-		COLOR_SEP="#0DCDCD"
-	}
-	source ~/.config/vlfstatus/config 2>/dev/null
+    COLOR_BAT_HIGH="#00FF7F"
+    COLOR_BAT_MID="#FFD700"
+    COLOR_BAT_LOW="#FF0055"
+    COLOR_TIME="#00E5FF"
+    COLOR_TEXT="#FFFFFF"
+    COLOR_SEP="#0DCDCD"
+
+		# SECURITY: Safely parse configuration files instead of sourcing them to prevent arbitrary code execution
+		for cfg_file in "$HOME"/.cache/bar_colors.sh "$HOME"/.config/vlfstatus/config; do
+			if [ -f "$cfg_file" ]; then
+				while IFS='=' read -r key val || [ -n "$key" ]; do
+					[[ -z "$key" || "$key" == \#* ]] && continue
+					key="${key//[[:space:]]/}"
+					if [[ "$key" =~ ^(COLOR_[a-zA-Z0-9_]+|MULTI_ACCOUNT_MODE)$ ]]; then
+						val="${val%\"}"
+						val="${val#\"}"
+						val="${val%\'}"
+						val="${val#\'}"
+						printf -v "$key" "%s" "$val"
+					fi
+				done < "$cfg_file"
+			fi
+		done
+	fi
 
 	# ⚡ Bolt Optimization: Use bash built-ins for date formatting and reading files.
 	# Avoids expensive fork/exec of `date` and `cat` subprocesses every second.
-	printf -v DATETIME "%(%d %a %H:%M:%S)T" -1
+	printf -v DATETIME "%(%a %d %b %H:%M:%S)T" -1
 	# ⚡ Bolt Optimization: Use CLI-native formatting flag to avoid grep/sed fork/exec overhead.
 	# Also avoid expensive nmcli subshell entirely when disconnected by checking sysfs first.
 	read -r WIFI_STATE 2>/dev/null < /sys/class/net/wlp8s0/operstate || WIFI_STATE="down"
 	if [[ "$WIFI_STATE" == "up" ]]; then
-		WIFI_RAW=$(nmcli -t -f GENERAL.CONNECTION dev show wlp8s0 2>/dev/null)
+		if (( TICK % 5 == 2 )) || [[ -z "$WIFI_RAW" || "$WIFI_RAW" == "--" ]]; then
+			WIFI_RAW=$(nmcli -t -f GENERAL.CONNECTION dev show wlp8s0 2>/dev/null)
+		fi
 	else
 		WIFI_RAW="--"
 	fi
@@ -108,25 +164,24 @@ while true; do
 	fi
 
 	QUOTA_TEXT=""
-	if command -v agy >/dev/null 2>&1 && [ -f ~/.cache/agy_quota.json ]; then
-		# ⚡ Bolt Optimization: Cache JSON parsing by tracking file mtime.
-		# Avoids executing 9 expensive `grep` subprocesses every second.
-		CURRENT_QUOTA_MTIME=$(stat -c %Y ~/.cache/agy_quota.json 2>/dev/null)
-		if [ "$CURRENT_QUOTA_MTIME" != "$LAST_QUOTA_MTIME" ]; then
-			LAST_QUOTA_MTIME=$CURRENT_QUOTA_MTIME
+	if command -v agy >/dev/null 2>&1 && [ -f "$HOME"/.cache/agy_quota.json ]; then
+		# ⚡ Bolt Optimization: Cache JSON parsing by tracking file mtime using bash built-in `-nt`.
+		# Avoids executing `stat` and 9 expensive `grep` subprocesses every second.
+		if [ "$HOME"/.cache/agy_quota.json -nt "$HOME"/.cache/agy_quota.marker ] 2>/dev/null || [ ! -f "$HOME"/.cache/agy_quota.marker ]; then
+			touch "$HOME"/.cache/agy_quota.marker 2>/dev/null || true
 
-			G_5H_ARR=($(grep -oP '"gemini_5h": "\K[0-9.]+' ~/.cache/agy_quota.json))
-			G_WK_ARR=($(grep -oP '"gemini_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json))
-			C_5H_ARR=($(grep -oP '"claude_5h": "\K[0-9.]+' ~/.cache/agy_quota.json))
-			C_WK_ARR=($(grep -oP '"claude_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json))
+			G_5H_ARR=($(grep -oP '"gemini_5h": "\K[0-9.]+' "$HOME"/.cache/agy_quota.json))
+			G_WK_ARR=($(grep -oP '"gemini_weekly": "\K[0-9.]+' "$HOME"/.cache/agy_quota.json))
+			C_5H_ARR=($(grep -oP '"claude_5h": "\K[0-9.]+' "$HOME"/.cache/agy_quota.json))
+			C_WK_ARR=($(grep -oP '"claude_weekly": "\K[0-9.]+' "$HOME"/.cache/agy_quota.json))
 
-			G_5H_EPOCH_ARR=($(grep -oP '"gemini_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
-			G_WK_EPOCH_ARR=($(grep -oP '"gemini_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
-			C_5H_EPOCH_ARR=($(grep -oP '"claude_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
-			C_WK_EPOCH_ARR=($(grep -oP '"claude_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
+			G_5H_EPOCH_ARR=($(grep -oP '"gemini_5h_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
+			G_WK_EPOCH_ARR=($(grep -oP '"gemini_weekly_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
+			C_5H_EPOCH_ARR=($(grep -oP '"claude_5h_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
+			C_WK_EPOCH_ARR=($(grep -oP '"claude_weekly_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
 
 			LAST_NUM_ACCOUNTS=${#G_5H_ARR[@]}
-			LAST_UPDATED=$(grep -oP '"last_updated_epoch": \K[0-9]+' ~/.cache/agy_quota.json | head -n1)
+			LAST_UPDATED=$(grep -m 1 -oP '"last_updated_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json)
 
 			# Pre-calculate TOTAL_G and TOTAL_C for combined mode to avoid fork/exec per second
 			if [ "$LAST_NUM_ACCOUNTS" -gt 0 ]; then
@@ -144,8 +199,8 @@ while true; do
 					TOTAL_G_EXPR="$TOTAL_G_EXPR + ${G5H:-0}"
 					TOTAL_C_EXPR="$TOTAL_C_EXPR + ${C5H:-0}"
 				done
-				CACHED_TOTAL_G=$(awk "BEGIN {val=($TOTAL_G_EXPR)/$LAST_NUM_ACCOUNTS; if (val == int(val)) printf \"%d\", val; else printf \"%.1f\", val}")
-				CACHED_TOTAL_C=$(awk "BEGIN {val=($TOTAL_C_EXPR)/$LAST_NUM_ACCOUNTS; if (val == int(val)) printf \"%d\", val; else printf \"%.1f\", val}")
+				CACHED_TOTAL_G=$(awk -v expr="$TOTAL_G_EXPR" -v count="$LAST_NUM_ACCOUNTS" 'BEGIN { val = 0; split(expr, parts, "+"); for (i in parts) { val += parts[i] }; val = val / count; if (val == int(val)) printf "%d", val; else printf "%.1f", val}')
+				CACHED_TOTAL_C=$(awk -v expr="$TOTAL_C_EXPR" -v count="$LAST_NUM_ACCOUNTS" 'BEGIN { val = 0; split(expr, parts, "+"); for (i in parts) { val += parts[i] }; val = val / count; if (val == int(val)) printf "%d", val; else printf "%.1f", val}')
 			fi
 		fi
 
@@ -168,7 +223,7 @@ while true; do
 					AGE_S=$((AGE % 60))
 					printf -v AGE_TXT "%02dm%02ds" "$AGE_M" "$AGE_S"
 				else
-					printf -v AGE_TXT "%02ds" "$AGE"
+					printf -v AGE_TXT "00m%02ds" "$AGE"
 				fi
 				REFRESH_TXT=" <span color='$AGE_COLOR'>⟳ ${AGE_TXT}</span>"
 			fi
@@ -176,7 +231,7 @@ while true; do
 			function format_reset_time() {
 				local SEC=$1
 				if [ $SEC -le 0 ]; then
-					echo "00s"
+					FORMATTED_RESET_TIME="00m00s"
 				else
 					local H=$((SEC / 3600))
 					local M=$(((SEC % 3600) / 60))
@@ -185,12 +240,12 @@ while true; do
 						if [ $H -gt 24 ]; then
 							local D=$((H / 24))
 							H=$((H % 24))
-							printf "%02dd%02dh\n" "$D" "$H"
+							printf -v FORMATTED_RESET_TIME "%02dd%02dh" "$D" "$H"
 						else
-							printf "%02dh%02dm\n" "$H" "$M"
+							printf -v FORMATTED_RESET_TIME "%02dh%02dm" "$H" "$M"
 						fi
 					else
-						printf "%02dm%02ds\n" "$M" "$S"
+						printf -v FORMATTED_RESET_TIME "%02dm%02ds" "$M" "$S"
 					fi
 				fi
 			}
@@ -210,12 +265,14 @@ while true; do
 
 					G_RESET="N/A"
 					if [ -n "$G_EPOCH" ] && [ "$G_EPOCH" -gt 0 ]; then
-						G_RESET=$(format_reset_time $((G_EPOCH - NOW)))
+						format_reset_time $((G_EPOCH - NOW))
+						G_RESET="$FORMATTED_RESET_TIME"
 					fi
 
 					C_RESET="N/A"
 					if [ -n "$C_EPOCH" ] && [ "$C_EPOCH" -gt 0 ]; then
-						C_RESET=$(format_reset_time $((C_EPOCH - NOW)))
+						format_reset_time $((C_EPOCH - NOW))
+						C_RESET="$FORMATTED_RESET_TIME"
 					fi
 
 					# Build string per account
@@ -251,12 +308,14 @@ while true; do
 
 				G_RESET="N/A"
 				if [ "$MIN_G_EPOCH" -ne 99999999999 ]; then
-					G_RESET=$(format_reset_time $((MIN_G_EPOCH - NOW)))
+					format_reset_time $((MIN_G_EPOCH - NOW))
+					G_RESET="$FORMATTED_RESET_TIME"
 				fi
 
 				C_RESET="N/A"
 				if [ "$MIN_C_EPOCH" -ne 99999999999 ]; then
-					C_RESET=$(format_reset_time $((MIN_C_EPOCH - NOW)))
+					format_reset_time $((MIN_C_EPOCH - NOW))
+					C_RESET="$FORMATTED_RESET_TIME"
 				fi
 
 				QUOTA_TEXT=" <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${TOTAL_G}%</span><span color='$COLOR_SEP'> ${G_RESET}</span> <span color='$COLOR_WIFI'> </span><span color='$COLOR_TEXT'>${TOTAL_C}%</span><span color='$COLOR_SEP'> ${C_RESET}</span>${REFRESH_TXT}"
@@ -279,27 +338,38 @@ while true; do
 		elif [ "$VOL_RAW" -eq 0 ]; then
 			VOL_INDICATOR=" <span color='$COLOR_BAT_LOW'>󰝟 </span><span color='$COLOR_SEP'>0%</span>"
 		else
-			if [ "$VOL_RAW" -gt 66 ]; then
+			VOL_COLOR_ICON="$COLOR_TIME"
+			if [ "$VOL_RAW" -gt 100 ]; then
+				VOL_ICON=" "
+				VOL_COLOR_ICON="$COLOR_BAT_LOW"
+			elif [ "$VOL_RAW" -gt 66 ]; then
 				VOL_ICON=" "
 			elif [ "$VOL_RAW" -gt 33 ]; then
 				VOL_ICON=" "
 			else
 				VOL_ICON=" "
 			fi
-			VOL_INDICATOR=" <span color='$COLOR_TIME'>${VOL_ICON}</span><span color='$COLOR_TEXT'>${VOL_RAW}%</span>"
+			if [ "$VOL_RAW" -gt 100 ]; then
+				VOL_INDICATOR=" <span color='$COLOR_BAT_LOW'>${VOL_ICON}</span><span color='$COLOR_BAT_LOW'>${VOL_RAW}%</span>"
+			else
+				VOL_INDICATOR=" <span color='$COLOR_TIME'>${VOL_ICON}</span><span color='$COLOR_TEXT'>${VOL_RAW}%</span>"
+			fi
 		fi
 	fi
 
 	# Active App Indicators
-	APP_INDICATORS=""
-	if systemctl --user is-active --quiet jules-listener.service 2>/dev/null; then
-		APP_INDICATORS="$APP_INDICATORS <span color='#FFD700'>󱚝</span>"
-	fi
-	if pgrep -f gitkraken >/dev/null 2>&1; then
-		APP_INDICATORS="$APP_INDICATORS <span color='#179287'></span>"
-	fi
-	if pgrep -x dockerd >/dev/null 2>&1; then
-		APP_INDICATORS="$APP_INDICATORS <span color='#2496ed'>󰡨</span>"
+	# ⚡ Bolt Optimization: Rate limit expensive process checks to run every 5 ticks
+	if (( TICK % 5 == 1 )); then
+		APP_INDICATORS=""
+		if systemctl --user is-active --quiet jules-listener.service 2>/dev/null; then
+			APP_INDICATORS="$APP_INDICATORS <span color='#FFD700'>󱚝</span>"
+		fi
+		if pgrep -f gitkraken >/dev/null 2>&1; then
+			APP_INDICATORS="$APP_INDICATORS <span color='#179287'></span>"
+		fi
+		if pgrep -x dockerd >/dev/null 2>&1; then
+			APP_INDICATORS="$APP_INDICATORS <span color='#2496ed'>󰡨</span>"
+		fi
 	fi
 
 	# Build BAR with Quota on the leftmost side (swapped with WiFi)

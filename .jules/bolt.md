@@ -24,3 +24,16 @@
 ## 2025-05-18 - Avoid subshell overhead by checking sysfs before invoking external binaries
 **Learning:** In high-frequency bash loops, invoking external commands (like `nmcli`) unconditionally causes expensive fork/exec overhead (approx. 66ms per 100 iterations) even when the state hasn't changed.
 **Action:** Before executing slow networking or system state commands, read from kernel `/sys/class` (e.g., `/sys/class/net/wlp8s0/operstate`) using bash built-in `read` which executes almost instantaneously (~2ms per 100 iterations), bypassing external binary execution completely when the device is down or idle.
+## 2025-02-12 - Rate limiting and eliminating subshells in high-frequency loops
+**Learning:** Checking process statuses (like `pgrep` or `systemctl`) or using command substitution (`$(...)`) to format text in high-frequency bash loops (e.g. `while true; do ... sleep 1`) introduces hidden CPU overhead due to frequent fork/execs.
+**Action:** Use a TICK counter to rate-limit expensive external commands (e.g. `if (( TICK % 5 == 0 )); then`), and use `printf -v VARIABLE_NAME` instead of command substitution to update string output inside tight loops.
+
+## 2025-02-12 - Eliminate Subshell Overhead with bash built-in -nt
+**Learning:** Checking file modification time (`stat -c %Y`) on every tick inside a high-frequency bash loop forks a subprocess every second, causing overhead and unnecessary CPU usage.
+**Action:** Replace `stat -c %Y` with bash built-in file test operator `[ file -nt marker ]`. Update the `marker` file using `touch` only when the target file actually changes, entirely eliminating the per-second fork/exec overhead.
+## 2025-02-12 - Caching configuration parsing in bash loops
+**Learning:** Even without subshells, reading configuration files line-by-line using built-in `read` and evaluating regular expressions (`=~`) on every iteration of a high-frequency loop adds measurable CPU overhead. Default variable assignments placed outside the caching block will incorrectly overwrite custom configurations on skipped iterations.
+**Action:** Cache the line-by-line parsing using bash `-nt` modification checks coupled with existence state tracking. Ensure default variable assignments are placed *inside* the caching block so they are only applied when a full re-parse happens.
+## 2025-10-26 - Spreading rate-limited subprocess execution across different ticks
+**Learning:** Rate-limiting different subprocesses (e.g. app indicators, network polling) to the same tick interval (e.g. `TICK % 5 == 1`) creates periodic CPU latency spikes ("stutter") instead of an even distribution of work.
+**Action:** When adding multiple rate-limited polling mechanisms in high-frequency loops, offset the modulo checks (e.g., `TICK % 5 == 1`, `TICK % 5 == 2`) to spread the fork/exec overhead evenly across ticks.
