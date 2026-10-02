@@ -34,6 +34,12 @@ fi
 
 trap 'error "Installation failed on command: \`${C_BOLD}$BASH_COMMAND${C_RESET}\` at line $LINENO (exit code $?)"' ERR
 
+# SECURITY: Prevent execution as root to avoid Local Privilege Escalation (LPE).
+if [ "$EUID" -eq 0 ]; then
+    error "This script must not be run as root."
+    exit 1
+fi
+
 echo -e "\n${C_BOLD}🚀 Starting vlfstatus installation${C_RESET}"
 
 step "1. Legacy Configuration"
