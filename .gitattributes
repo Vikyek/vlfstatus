@@ -1,0 +1,2 @@
+# Jules agent journals: append-only logs -> union merge avoids conflicts
+.jules/*.md merge=union

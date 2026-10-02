@@ -1,3 +1,8 @@
+## Ledger
+OPEN|2026-09-25|86|vlfstatus|add warning color for volume over-amplification
+MERGED|2026-09-11|41|vlfstatus|zero-pad numeric time readouts
+MERGED|2026-09-16|56|vlfstatus|date readability and volume feedback
+
 ## 2024-05-24 - Battery Charging Indicator
 **Learning:** Users experience anxiety when checking battery capacity if they are unsure if the device is actively charging, even when plugged in. A raw percentage or static battery icon doesn't communicate the charging state clearly.
 **Action:** Always include a distinct visual indicator (e.g., a lightning bolt or charging icon) when a device is actively receiving power.
