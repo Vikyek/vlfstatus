@@ -33,6 +33,12 @@
 ## 2026-09-16 - Natural Semantic Date Ordering
 **Learning:** Formatting dates in concise UI components like status bars with unnatural ordering (e.g., "16 Mon") increases cognitive parsing effort as users are accustomed to natural language phrasing.
 **Action:** When displaying dates in tight UI components, prefer natural semantic ordering (e.g., "Mon 16 Sep") to minimize cognitive load.
-## 2026-09-25 - Volume Over-amplification Warning
-**Learning:** Applying warning colors to volume/audio icons when output exceeds 100% provides immediate visual feedback of over-amplification and clipping risks.
-**Action:** Always apply warning colors (like COLOR_BAT_LOW) to volume indicators when the level exceeds 100% to warn users of clipping risks.
+## 2024-09-27 - Volume Over-Amplification Warning
+**Learning:** Users lack immediate visual feedback when audio volume is pushed beyond 100%, which can lead to clipping, distortion, or hardware strain.
+**Action:** Apply warning colors (e.g., $COLOR_BAT_LOW) to the volume icon when output exceeds 100% to clearly indicate over-amplification risks.
+## 2024-09-28 - Semantic Default Colors
+**Learning:** Hardcoding all default fallback theme colors to a critical/warning color (like pure red) creates visual fatigue and false alarms, forcing users to constantly check if there is an actual problem or just a missing configuration file.
+**Action:** Always provide semantically appropriate default colors (e.g., green for healthy battery, neutral colors for time) to ensure the interface is immediately usable and informative even before user customization.
+## 2024-10-15 - Rejected UX Change: Wi-Fi Default Color
+**Learning:** A proposed change to alter the default fallback Wi-Fi color from `#FF0055` (red) to a neutral/safe color (like cyan) was explicitly rejected by the user. The design constraint dictates that the default Wi-Fi color *must* remain red to serve a specific, intended purpose in the interface, likely as a clear visual indicator that the user is relying on fallback configurations rather than a fully customized setup.
+**Action:** Do not attempt to change the default fallback colors (e.g., `COLOR_WIFI="#FF0055"`) in `vlfstatus` unless explicitly prompted by the user to do so.
