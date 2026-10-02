@@ -26,34 +26,50 @@ LAST_NUM_ACCOUNTS=0
 LAST_UPDATED=""
 APP_INDICATORS=""
 TICK=0
+LAST_CFG_STATE=""
 
 while true; do
 	TICK=$((TICK + 1))
 
-	COLOR_WIFI="#FF0055"
-	COLOR_BAT_HIGH="#FF0055"
-	COLOR_BAT_MID="#FF0055"
-	COLOR_BAT_LOW="#FF0055"
-	COLOR_TIME="#FF0055"
-	COLOR_TEXT="#FFFFFF"
-	COLOR_SEP="#0DCDCD"
+	# ⚡ Bolt Optimization: Cache configuration parsing using modification times and explicit state tracking
+	# to eliminate line-by-line reading and regex evaluation overhead in this high-frequency loop.
+	CFG_STATE=""
+	[ -f "$HOME/.cache/bar_colors.sh" ] && CFG_STATE="${CFG_STATE}1" || CFG_STATE="${CFG_STATE}0"
+	[ -f "$HOME/.config/vlfstatus/config" ] && CFG_STATE="${CFG_STATE}1" || CFG_STATE="${CFG_STATE}0"
 
-	# SECURITY: Safely parse configuration files instead of sourcing them to prevent arbitrary code execution
-	for cfg_file in ~/.cache/bar_colors.sh ~/.config/vlfstatus/config; do
-		if [ -f "$cfg_file" ]; then
-			while IFS='=' read -r key val || [ -n "$key" ]; do
-				[[ -z "$key" || "$key" == \#* ]] && continue
-				key="${key//[[:space:]]/}"
-				if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-					val="${val%\"}"
-					val="${val#\"}"
-					val="${val%\'}"
-					val="${val#\'}"
-					printf -v "$key" "%s" "$val"
-				fi
-			done < "$cfg_file"
-		fi
-	done
+	if [ "$CFG_STATE" != "$LAST_CFG_STATE" ] || \
+	   [ "$HOME/.cache/bar_colors.sh" -nt "$HOME/.cache/vlfstatus_cfg.marker" ] 2>/dev/null || \
+	   [ "$HOME/.config/vlfstatus/config" -nt "$HOME/.cache/vlfstatus_cfg.marker" ] 2>/dev/null || \
+	   [ ! -f "$HOME/.cache/vlfstatus_cfg.marker" ]; then
+
+		touch "$HOME/.cache/vlfstatus_cfg.marker" 2>/dev/null || true
+		LAST_CFG_STATE="$CFG_STATE"
+
+		COLOR_WIFI="#FF0055"
+    COLOR_BAT_HIGH="#00FF7F"
+    COLOR_BAT_MID="#FFD700"
+    COLOR_BAT_LOW="#FF0055"
+    COLOR_TIME="#00E5FF"
+    COLOR_TEXT="#FFFFFF"
+    COLOR_SEP="#0DCDCD"
+
+		# SECURITY: Safely parse configuration files instead of sourcing them to prevent arbitrary code execution
+		for cfg_file in "$HOME"/.cache/bar_colors.sh "$HOME"/.config/vlfstatus/config; do
+			if [ -f "$cfg_file" ]; then
+				while IFS='=' read -r key val || [ -n "$key" ]; do
+					[[ -z "$key" || "$key" == \#* ]] && continue
+					key="${key//[[:space:]]/}"
+					if [[ "$key" =~ ^(COLOR_[a-zA-Z0-9_]+|MULTI_ACCOUNT_MODE)$ ]]; then
+						val="${val%\"}"
+						val="${val#\"}"
+						val="${val%\'}"
+						val="${val#\'}"
+						printf -v "$key" "%s" "$val"
+					fi
+				done < "$cfg_file"
+			fi
+		done
+	fi
 
 	# ⚡ Bolt Optimization: Use bash built-ins for date formatting and reading files.
 	# Avoids expensive fork/exec of `date` and `cat` subprocesses every second.
@@ -62,7 +78,9 @@ while true; do
 	# Also avoid expensive nmcli subshell entirely when disconnected by checking sysfs first.
 	read -r WIFI_STATE 2>/dev/null < /sys/class/net/wlp8s0/operstate || WIFI_STATE="down"
 	if [[ "$WIFI_STATE" == "up" ]]; then
-		WIFI_RAW=$(nmcli -t -f GENERAL.CONNECTION dev show wlp8s0 2>/dev/null)
+		if (( TICK % 5 == 2 )) || [[ -z "$WIFI_RAW" || "$WIFI_RAW" == "--" ]]; then
+			WIFI_RAW=$(nmcli -t -f GENERAL.CONNECTION dev show wlp8s0 2>/dev/null)
+		fi
 	else
 		WIFI_RAW="--"
 	fi
@@ -131,24 +149,24 @@ while true; do
 	fi
 
 	QUOTA_TEXT=""
-	if command -v agy >/dev/null 2>&1 && [ -f ~/.cache/agy_quota.json ]; then
+	if command -v agy >/dev/null 2>&1 && [ -f "$HOME"/.cache/agy_quota.json ]; then
 		# ⚡ Bolt Optimization: Cache JSON parsing by tracking file mtime using bash built-in `-nt`.
 		# Avoids executing `stat` and 9 expensive `grep` subprocesses every second.
-		if [ ~/.cache/agy_quota.json -nt ~/.cache/agy_quota.marker ] 2>/dev/null || [ ! -f ~/.cache/agy_quota.marker ]; then
-			touch ~/.cache/agy_quota.marker 2>/dev/null || true
+		if [ "$HOME"/.cache/agy_quota.json -nt "$HOME"/.cache/agy_quota.marker ] 2>/dev/null || [ ! -f "$HOME"/.cache/agy_quota.marker ]; then
+			touch "$HOME"/.cache/agy_quota.marker 2>/dev/null || true
 
-			G_5H_ARR=($(grep -oP '"gemini_5h": "\K[0-9.]+' ~/.cache/agy_quota.json))
-			G_WK_ARR=($(grep -oP '"gemini_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json))
-			C_5H_ARR=($(grep -oP '"claude_5h": "\K[0-9.]+' ~/.cache/agy_quota.json))
-			C_WK_ARR=($(grep -oP '"claude_weekly": "\K[0-9.]+' ~/.cache/agy_quota.json))
+			G_5H_ARR=($(grep -oP '"gemini_5h": "\K[0-9.]+' "$HOME"/.cache/agy_quota.json))
+			G_WK_ARR=($(grep -oP '"gemini_weekly": "\K[0-9.]+' "$HOME"/.cache/agy_quota.json))
+			C_5H_ARR=($(grep -oP '"claude_5h": "\K[0-9.]+' "$HOME"/.cache/agy_quota.json))
+			C_WK_ARR=($(grep -oP '"claude_weekly": "\K[0-9.]+' "$HOME"/.cache/agy_quota.json))
 
-			G_5H_EPOCH_ARR=($(grep -oP '"gemini_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
-			G_WK_EPOCH_ARR=($(grep -oP '"gemini_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
-			C_5H_EPOCH_ARR=($(grep -oP '"claude_5h_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
-			C_WK_EPOCH_ARR=($(grep -oP '"claude_weekly_reset_epoch": \K[0-9]+' ~/.cache/agy_quota.json))
+			G_5H_EPOCH_ARR=($(grep -oP '"gemini_5h_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
+			G_WK_EPOCH_ARR=($(grep -oP '"gemini_weekly_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
+			C_5H_EPOCH_ARR=($(grep -oP '"claude_5h_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
+			C_WK_EPOCH_ARR=($(grep -oP '"claude_weekly_reset_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json))
 
 			LAST_NUM_ACCOUNTS=${#G_5H_ARR[@]}
-			LAST_UPDATED=$(grep -oP '"last_updated_epoch": \K[0-9]+' ~/.cache/agy_quota.json | head -n1)
+			LAST_UPDATED=$(grep -m 1 -oP '"last_updated_epoch": \K[0-9]+' "$HOME"/.cache/agy_quota.json)
 
 			# Pre-calculate TOTAL_G and TOTAL_C for combined mode to avoid fork/exec per second
 			if [ "$LAST_NUM_ACCOUNTS" -gt 0 ]; then
@@ -305,7 +323,11 @@ while true; do
 		elif [ "$VOL_RAW" -eq 0 ]; then
 			VOL_INDICATOR=" <span color='$COLOR_BAT_LOW'>󰝟 </span><span color='$COLOR_SEP'>0%</span>"
 		else
-			if [ "$VOL_RAW" -gt 66 ]; then
+			VOL_COLOR_ICON="$COLOR_TIME"
+			if [ "$VOL_RAW" -gt 100 ]; then
+				VOL_ICON=" "
+				VOL_COLOR_ICON="$COLOR_BAT_LOW"
+			elif [ "$VOL_RAW" -gt 66 ]; then
 				VOL_ICON=" "
 			elif [ "$VOL_RAW" -gt 33 ]; then
 				VOL_ICON=" "
