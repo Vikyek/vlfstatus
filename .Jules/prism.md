@@ -25,6 +25,10 @@
 **Learning:** When bash scripts fail and rely on a global `ERR` trap to catch exceptions, simply printing the line number of the failure (e.g. `$LINENO`) forces the developer to manually open the source file to figure out what went wrong. This breaks immediate console feedback.
 **Action:** Use the `$BASH_COMMAND` built-in variable inside global bash `ERR` traps to instantly print the exact command that failed directly to the console.
 
-## 2026-09-26 - Bash Script Visual Hierarchy
-**Learning:** Security or validation checks (like EUID root checks) placed at the very top of a script often fall back to bare `echo` statements because standard UI helper functions haven't been defined yet, creating inconsistent console UX. Additionally, nesting section headers (like `step()`) consecutively creates double-spaced, jagged output.
-**Action:** Always define ANSI colors and UI helper functions before early execution checks, and avoid nesting section headers to preserve a clean visual hierarchy.
+## 2024-11-20 - CLI UI Initialization Order
+**Learning:** If ANSI color constants and UI helper functions (like `error()`) are defined after early execution checks (like EUID validation), those checks are forced to use raw `echo` or `print` statements. This results in inconsistent and unformatted early-exit error messages.
+**Action:** Always declare ANSI color constants and CLI formatting helpers at the very top of scripts before any validation logic.
+
+## 2024-11-20 - Avoiding Nested Separators
+**Learning:** Using separator functions (like `step()` with blank lines) inside other sub-sections creates jagged, double-spaced terminal output that is hard to scan.
+**Action:** Use a single primary section header and fall back to indented list items (e.g. `info()`) for sub-tasks to maintain a clean visual hierarchy.
