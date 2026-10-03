@@ -1,4 +1,5 @@
 ## Ledger
+OPEN|2026-10-03|123|install.sh,patch_font.py,fetch_quota.py|separate ANSI color tty checks for stdout and stderr
 OPEN|2026-09-28|96|vlfstatus|visual hierarchy for early execution errors
 OPEN|2026-09-24|82|install.sh|standardize validation errors and remove double-spaced headers
 MERGED|2026-09-15|55|fetch_quota.py|graceful termination for daemon

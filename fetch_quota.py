@@ -11,7 +11,7 @@ import subprocess
 from datetime import datetime
 
 # Styling setup respecting NO_COLOR
-if not os.environ.get("NO_COLOR") and sys.stderr.isatty():
+if not os.environ.get("NO_COLOR") and sys.stdout.isatty():
     C_INFO = '\033[1;34m'
     C_SUCCESS = '\033[1;32m'
     C_ERROR = '\033[1;31m'
@@ -28,13 +28,28 @@ else:
     C_RESET = ''
     C_CLEAR = ''
 
+if not os.environ.get("NO_COLOR") and sys.stderr.isatty():
+    C_ERROR_ERR = '\033[1;31m'
+    C_SUCCESS_ERR = '\033[1;32m'
+    C_BOLD_ERR = '\033[1m'
+    C_DIM_ERR = '\033[2m'
+    C_RESET_ERR = '\033[0m'
+    C_CLEAR_ERR = '\033[K'
+else:
+    C_ERROR_ERR = ''
+    C_SUCCESS_ERR = ''
+    C_BOLD_ERR = ''
+    C_DIM_ERR = ''
+    C_RESET_ERR = ''
+    C_CLEAR_ERR = ''
+
 # SECURITY: Prevent leaking stack traces when dependencies are missing.
 try:
     import secretstorage
 except ImportError:
     print(file=sys.stderr)
-    print(f"  {C_ERROR}✖ ERROR:{C_RESET} Missing required dependency: secretstorage", file=sys.stderr)
-    print(f"    {C_DIM}↳ Please install it (e.g., pip install secretstorage){C_RESET}", file=sys.stderr)
+    print(f"  {C_ERROR_ERR}✖ ERROR:{C_RESET_ERR} Missing required dependency: secretstorage", file=sys.stderr)
+    print(f"    {C_DIM_ERR}↳ Please install it (e.g., pip install secretstorage){C_RESET_ERR}", file=sys.stderr)
     print(file=sys.stderr)
     sys.exit(1)
 
@@ -54,8 +69,8 @@ def get_credential(key_name):
                 st = os.stat(env_path)
                 if st.st_mode & 0o077:
                     print(file=sys.stderr)
-                    print(f"  {C_ERROR}✖ ERROR:{C_RESET} Insecure permissions on {C_BOLD}{env_path}{C_RESET}", file=sys.stderr)
-                    print(f"    {C_DIM}↳ File must not be readable by group/others. Run 'chmod 600 {env_path}'{C_RESET}", file=sys.stderr)
+                    print(f"  {C_ERROR_ERR}✖ ERROR:{C_RESET_ERR} Insecure permissions on {C_BOLD_ERR}{env_path}{C_RESET_ERR}", file=sys.stderr)
+                    print(f"    {C_DIM_ERR}↳ File must not be readable by group/others. Run 'chmod 600 {env_path}'{C_RESET_ERR}", file=sys.stderr)
                     print(file=sys.stderr)
                     continue
             except Exception:
@@ -205,7 +220,7 @@ def main():
             time.sleep(30)
     except KeyboardInterrupt:
         print(file=sys.stderr)
-        print(f"  {C_DIM}↳ Quota daemon stopped cleanly by user.{C_RESET}", file=sys.stderr)
+        print(f"  {C_DIM_ERR}↳ Quota daemon stopped cleanly by user.{C_RESET_ERR}", file=sys.stderr)
         sys.exit(0)
 
 if __name__ == "__main__":
@@ -214,5 +229,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         # SECURITY: Prevent raw stack traces from leaking to the console on SIGINT
         print(file=sys.stderr)
-        print(f"  {C_SUCCESS}✔{C_RESET} {C_DIM}Quota daemon gracefully terminated.{C_RESET}{C_CLEAR}", file=sys.stderr)
+        print(f"  {C_SUCCESS_ERR}✔{C_RESET_ERR} {C_DIM_ERR}Quota daemon gracefully terminated.{C_RESET_ERR}{C_CLEAR_ERR}", file=sys.stderr)
         sys.exit(0)
