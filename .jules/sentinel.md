@@ -61,8 +61,7 @@
 **Learning:** Never use generic regexes `^[a-zA-Z_][a-zA-Z0-9_]*$` with `printf -v`.
 **Prevention:** Validate keys against a strict, explicit allowlist regular expression (e.g., `^(COLOR_[a-zA-Z0-9_]+|MULTI_ACCOUNT_MODE)$`) when loading config files.
 
-
 ## 2026-09-29 - Prevent Untrusted Search Path with shutil.which and env=
-**Vulnerability:** Even when `env=safe_env` is passed to `subprocess.run`, Python resolves the executable using the parent process's `os.environ["PATH"]` instead of the provided `safe_env["PATH"]` when using older POSIX behaviors or certain setups. This allows an attacker to poison the parent environment's PATH to execute malicious code. Additionally, using a dynamic variable as the first element of the `subprocess.run` args list triggers SAST (Static Application Security Testing) command-injection warnings.
-**Learning:** `subprocess.run` executable lookup defaults to the `env` argument's PATH on modern POSIX implementations, but older behaviors, edge cases, and static analysis tools demand absolute paths for defense-in-depth and passing security audits.
+**Vulnerability:** Even when `env=safe_env` is passed to `subprocess.run`, using a dynamic variable as the first element of the `subprocess.run` args list triggers SAST (Static Application Security Testing) command-injection warnings.
+**Learning:** `subprocess.run` executable lookup defaults to the `env` argument's PATH on POSIX, but static analysis tools demand absolute paths or static strings for defense-in-depth and passing security audits.
 **Prevention:** Explicitly resolve absolute paths using `shutil.which("command", path=safe_env["PATH"])` and pass it via the `executable=` argument in `subprocess.run(["command", ...], executable=path)` to satisfy both secure resolution and static analysis tools.
