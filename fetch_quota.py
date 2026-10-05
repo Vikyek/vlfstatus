@@ -8,6 +8,7 @@ import sys
 import tempfile
 import hashlib
 import subprocess
+import shutil
 from datetime import datetime
 
 # Styling setup respecting NO_COLOR
@@ -97,8 +98,11 @@ def fetch_quota_from_agy_cli():
         # Sanitize environment PATH to prevent untrusted execution
         safe_env = os.environ.copy()
         safe_env["PATH"] = "/usr/local/bin:/usr/bin:/bin"
+        agy_path = shutil.which("agy", path=safe_env["PATH"])
+        if not agy_path:
+            return None
         res = subprocess.run(
-            ["agy", "-p", "/quota", "--output-format", "json"],
+            [agy_path, "-p", "/quota", "--output-format", "json"],
             capture_output=True,
             text=True,
             timeout=20,
