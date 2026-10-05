@@ -102,7 +102,8 @@ def fetch_quota_from_agy_cli():
         if not agy_path:
             return None
         res = subprocess.run(
-            [agy_path, "-p", "/quota", "--output-format", "json"],
+            ["agy", "-p", "/quota", "--output-format", "json"],
+            executable=agy_path,
             capture_output=True,
             text=True,
             timeout=20,
