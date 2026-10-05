@@ -7,22 +7,29 @@ import sys
 if not os.environ.get("NO_COLOR") and sys.stdout.isatty():
     C_INFO = '\033[1;34m'
     C_SUCCESS = '\033[1;32m'
-    C_ERROR = '\033[1;31m'
     C_BOLD = '\033[1m'
     C_DIM = '\033[2m'
     C_RESET = '\033[0m'
 else:
     C_INFO = ''
     C_SUCCESS = ''
-    C_ERROR = ''
     C_BOLD = ''
     C_DIM = ''
     C_RESET = ''
 
+if not os.environ.get("NO_COLOR") and sys.stderr.isatty():
+    C_ERROR = '\033[1;31m'
+    C_DIM_ERR = '\033[2m'
+    C_RESET_ERR = '\033[0m'
+else:
+    C_ERROR = ''
+    C_DIM_ERR = ''
+    C_RESET_ERR = ''
+
 def step(msg): print(f"\n{C_DIM}---{C_RESET}\n{C_BOLD}{msg}{C_RESET}")
 def info(msg): print(f"  {C_INFO}•{C_RESET} {msg}")
 def success(msg): print(f"  {C_SUCCESS}✔{C_RESET} {msg}")
-def error(msg): print(f"  {C_ERROR}✖ ERROR:{C_RESET} {msg}", file=sys.stderr)
+def error(msg): print(f"  {C_ERROR}✖ ERROR:{C_RESET_ERR} {msg}", file=sys.stderr)
 def dim(msg): print(f"    {C_DIM}↳ {msg}{C_RESET}")
 
 try:
@@ -30,7 +37,7 @@ try:
 except ImportError:
     print(file=sys.stderr)
     error("Missing required dependency: fontforge")
-    print(f"    {C_DIM}↳ Please install it (e.g., sudo pacman -S fontforge){C_RESET}", file=sys.stderr)
+    print(f"    {C_DIM_ERR}↳ Please install it (e.g., sudo pacman -S fontforge){C_RESET_ERR}", file=sys.stderr)
     print(file=sys.stderr)
     sys.exit(1)
 

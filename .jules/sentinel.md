@@ -1,3 +1,7 @@
+## Ledger
+OPEN|2026-09-25|88|vlfstatus|allowlist config var regex (CWE-473)
+OPEN|2026-09-14|54|fetch_quota.py|suppress stack trace on SIGINT
+
 ## 2024-05-18 - Prevent JSON & Pango Injection in Status Bar
 **Vulnerability:** The Wi-Fi connection name (SSID) retrieved from `nmcli` was inserted directly into the JSON and Pango markup output without any sanitization. A malicious SSID containing characters like `<`, `>`, `&`, `"`, or `\` could cause JSON parsing errors or Pango markup injection, potentially crashing the status bar or leading to XSS-like behaviors.
 **Learning:** In bash scripts generating structured output (JSON, HTML, Pango) from external untrusted input (like Wi-Fi SSIDs), input must be rigorously sanitized. When using bash parameter expansion for replacement, one must be careful with bash 5.2+'s `patsub_replacement` option, where unescaped `&` in the replacement string acts as a backreference. Disabling it with `shopt -u patsub_replacement 2>/dev/null || true` ensures cross-version compatibility for replacements like `&amp;`.
@@ -48,6 +52,10 @@
 **Learning:** Scripts that process untrusted or user-modifiable inputs should not run as root unless strictly necessary. The principle of least privilege should be strictly enforced at the entry point of scripts.
 **Prevention:** Always include a check for the Effective User ID (`$EUID`) at the beginning of user-level scripts (`if [ "$EUID" -eq 0 ]; then exit 1; fi`) to prevent accidental or malicious execution with root privileges.
 
+## 2026-09-14 - Prevent Stack Trace Leakage on SIGINT
+**Vulnerability:** A script `fetch_quota.py` running as a continuous daemon lacked error handling for `SIGINT` (Ctrl+C). When executed manually and interrupted, it leaked internal stack traces and execution context to the console.
+**Learning:** Raw tracebacks leak internal application structure, file paths, and execution context. When a continuous script runs as a background daemon, unhandled exceptions can pollute system logs. Failing securely means abstracting away implementation details from the failure state.
+**Prevention:** Wrap the main continuous execution loops in `try/except KeyboardInterrupt` blocks. Output a clean, semantic shutdown message to standard error (`sys.stderr`) when caught, ensuring no tracebacks are exposed, and securely exit the process.
 ## 2026-09-16 - Prevent Arbitrary Code Execution via Sourced Configuration Files
 **Vulnerability:** The bash script `vlfstatus` loaded user configuration and color caches (`~/.config/vlfstatus/config` and `~/.cache/bar_colors.sh`) using the `source` command. Since `source` evaluates file contents as bash commands in the current shell, any malicious code injected into these files (e.g. by another application or downloaded script) would be executed with the user's privileges, leading to arbitrary code execution.
 **Learning:** Sourcing untrusted or externally modifiable configuration files in bash scripts is a dangerous pattern because it does not distinguish between variable assignments and executable commands.
