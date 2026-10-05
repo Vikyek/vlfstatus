@@ -69,11 +69,7 @@ OPEN|2026-09-14|54|fetch_quota.py|suppress stack trace on SIGINT
 **Learning:** Never use generic regexes `^[a-zA-Z_][a-zA-Z0-9_]*$` with `printf -v`.
 **Prevention:** Validate keys against a strict, explicit allowlist regular expression (e.g., `^(COLOR_[a-zA-Z0-9_]+|MULTI_ACCOUNT_MODE)$`) when loading config files.
 
-## 2026-10-01 - Removed Hardcoded Google Client ID
-**Vulnerability:** A hardcoded Google API `client_id` was present in `fetch_quota.py`.
-**Learning:** Hardcoding sensitive or identity information such as client IDs in source code exposes them to misuse or impersonation if the repository becomes public.
-**Prevention:** Always load identity credentials from secure sources such as environment variables (e.g., `os.environ.get`), secure configuration files, or secret management services instead of hardcoding them in the codebase.
-## 2024-10-01 - Prevent Path Word Splitting
-**Vulnerability:** Bash scripts like `vlfstatus` used unquoted tilde expansions (e.g., `~/.cache/bar_colors.sh`) in `for` loops and file tests. If a user's home directory path contains spaces, the path will undergo word splitting, leading to incorrect file resolution and potentially exposing the script to unintended behavior or path traversal/manipulation.
-**Learning:** Tilde expansion `~` should not be used in contexts where the resulting path might contain spaces and is not protected by quotes.
-**Prevention:** Always use safely quoted paths with the `$HOME` variable (e.g., `"$HOME/.cache/file"`) instead of unquoted tildes to prevent word splitting vulnerabilities.
+## 2026-09-29 - Prevent Untrusted Search Path with shutil.which and env=
+**Vulnerability:** Even when `env=safe_env` is passed to `subprocess.run`, using a dynamic variable as the first element of the `subprocess.run` args list triggers SAST (Static Application Security Testing) command-injection warnings.
+**Learning:** `subprocess.run` executable lookup defaults to the `env` argument's PATH on POSIX, but static analysis tools demand absolute paths or static strings for defense-in-depth and passing security audits.
+**Prevention:** Explicitly resolve absolute paths using `shutil.which("command", path=safe_env["PATH"])` and pass it via the `executable=` argument in `subprocess.run(["command", ...], executable=path)` to satisfy both secure resolution and static analysis tools.
