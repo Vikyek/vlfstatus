@@ -7,7 +7,6 @@ if [ -z "${NO_COLOR}" ] && [ -t 1 ]; then
     C_INFO='\033[1;34m'
     C_SUCCESS='\033[1;32m'
     C_WARN='\033[1;33m'
-    C_ERROR='\033[1;31m'
     C_BOLD='\033[1m'
     C_DIM='\033[2m'
 else
@@ -15,16 +14,25 @@ else
     C_INFO=''
     C_SUCCESS=''
     C_WARN=''
-    C_ERROR=''
     C_BOLD=''
     C_DIM=''
+fi
+
+if [ -z "${NO_COLOR}" ] && [ -t 2 ]; then
+    C_ERROR='\033[1;31m'
+    C_RESET_ERR='\033[0m'
+    C_BOLD_ERR='\033[1m'
+else
+    C_ERROR=''
+    C_RESET_ERR=''
+    C_BOLD_ERR=''
 fi
 
 step() { echo -e "\n${C_DIM}---${C_RESET}\n${C_BOLD}$*${C_RESET}"; }
 info() { echo -e "  ${C_INFO}•${C_RESET} $*"; }
 success() { echo -e "  ${C_SUCCESS}✔${C_RESET} $*"; }
 warn() { echo -e "  ${C_WARN}⚠${C_RESET} $*"; }
-error() { echo -e "  ${C_ERROR}✖ ERROR:${C_RESET} $*" >&2; }
+error() { echo -e "  ${C_ERROR}✖ ERROR:${C_RESET_ERR} $*" >&2; }
 
 # SECURITY: Prevent execution as root to avoid Local Privilege Escalation (LPE).
 if [ "$EUID" -eq 0 ]; then
@@ -32,7 +40,13 @@ if [ "$EUID" -eq 0 ]; then
     exit 1
 fi
 
-trap 'error "Installation failed on command: \`${C_BOLD}$BASH_COMMAND${C_RESET}\` at line $LINENO (exit code $?)"' ERR
+trap 'error "Installation failed on command: \`${C_BOLD_ERR}$BASH_COMMAND${C_RESET_ERR}\` at line $LINENO (exit code $?)"' ERR
+
+# SECURITY: Prevent execution as root to avoid Local Privilege Escalation (LPE).
+if [ "$EUID" -eq 0 ]; then
+    error "This script must not be run as root."
+    exit 1
+fi
 
 echo -e "\n${C_BOLD}🚀 Starting vlfstatus installation${C_RESET}"
 

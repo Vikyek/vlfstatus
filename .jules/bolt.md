@@ -1,3 +1,7 @@
+## Ledger
+OPEN|2026-09-29|99|vlfstatus|cache configuration parsing in status loop
+MERGED|2026-09-11|44|vlfstatus|replace stat with bash -nt builtin
+
 ## 2025-02-12 - JSON Parsing Bottleneck in Bash Status Bar
 **Learning:** Parsing JSON sequentially with 9 separate `grep` processes in a tight `while true; do ... sleep 1` bash loop consumes significant CPU and blocks rendering updates.
 **Action:** Always cache parsing logic by checking file modification time (`stat -c %Y`) when extracting data from polling background daemons. This drops extraction time from ~45ms to <5ms per tick.
@@ -31,3 +35,9 @@
 ## 2025-02-12 - Eliminate Subshell Overhead with bash built-in -nt
 **Learning:** Checking file modification time (`stat -c %Y`) on every tick inside a high-frequency bash loop forks a subprocess every second, causing overhead and unnecessary CPU usage.
 **Action:** Replace `stat -c %Y` with bash built-in file test operator `[ file -nt marker ]`. Update the `marker` file using `touch` only when the target file actually changes, entirely eliminating the per-second fork/exec overhead.
+## 2025-02-12 - Caching configuration parsing in bash loops
+**Learning:** Even without subshells, reading configuration files line-by-line using built-in `read` and evaluating regular expressions (`=~`) on every iteration of a high-frequency loop adds measurable CPU overhead. Default variable assignments placed outside the caching block will incorrectly overwrite custom configurations on skipped iterations.
+**Action:** Cache the line-by-line parsing using bash `-nt` modification checks coupled with existence state tracking. Ensure default variable assignments are placed *inside* the caching block so they are only applied when a full re-parse happens.
+## 2025-10-26 - Spreading rate-limited subprocess execution across different ticks
+**Learning:** Rate-limiting different subprocesses (e.g. app indicators, network polling) to the same tick interval (e.g. `TICK % 5 == 1`) creates periodic CPU latency spikes ("stutter") instead of an even distribution of work.
+**Action:** When adding multiple rate-limited polling mechanisms in high-frequency loops, offset the modulo checks (e.g., `TICK % 5 == 1`, `TICK % 5 == 2`) to spread the fork/exec overhead evenly across ticks.
