@@ -27,6 +27,7 @@ pkgver() {
 package() {
   cd "$_pkgname"
   install -Dm755 vlfstatus "$pkgdir/usr/bin/vlfstatus"
+  install -Dm644 man1/vlfstatus.1 "$pkgdir/usr/share/man/man1/vlfstatus.1"
   install -Dm644 fetch_quota.py "$pkgdir/usr/share/vlfstatus/fetch_quota.py"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

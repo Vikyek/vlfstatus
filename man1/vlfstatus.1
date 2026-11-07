@@ -1,0 +1,19 @@
+.TH VLFSTATUS 1 "November 2026" "vlfstatus 1.0.0" "User Commands"
+.SH NAME
+vlfstatus \- Lightweight, high-frequency status bar generator for i3bar and swaybar
+.SH SYNOPSIS
+.B vlfstatus
+[\fIOPTIONS\fR]
+.SH DESCRIPTION
+.B vlfstatus
+is a feature-packed status bar generator written in pure Bash and optimized for minimal subprocess fork/exec overhead.
+It feeds formatted JSON status blocks to \fBi3bar\fR and \fBswaybar\fR, displaying live telemetry including CPU load, memory usage, network SSID, audio volume, battery percentages, and optional AI quota consumption via \fBfetch_quota.py\fR.
+.SH OPTIONS
+.TP
+.B \-\-help
+Displays usage instructions.
+.SH SEE ALSO
+.BR i3bar (1),
+.BR swaybar (1)
+.SH AUTHORS
+Maintained by Vikyek <https://github.com/Vikyek/vlfstatus>.
