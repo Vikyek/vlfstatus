@@ -1,5 +1,8 @@
 # vlfstatus
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Sponsor Vikyek](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/Vikyek)
+
 > Lightweight, feature-packed bash status bar generator for `i3bar` and `swaybar` using the i3bar JSON header protocol and Pango markup. (Evolved from legacy `wlfstatus`).
 
 ## Overview
@@ -114,3 +117,24 @@ To verify that `vlfstatus` produces a clean JSON stream, execute the script dire
 ```
 
 Press `Ctrl+C` to stop execution.
+
+---
+
+## 💖 Support & Sponsorship
+
+`vlfstatus` is authored and maintained by **[Vikyek](https://github.com/Vikyek)** as an independent open-source project.
+
+> ### 🎯 Active Sponsorship Goal: Monthly Living Essentials
+> **Target:** **2,710 PLN / ~$675 USD per month** (Rent & Utilities)  
+> Covering basic living essentials directly unlocks dedicated, sustainable full-time independent open-source engineering across desktop environment tooling and Linux system utilities.
+
+If `vlfstatus` powers your desktop status bar, consider supporting my work:
+
+- **GitHub Sponsors**: [github.com/sponsors/Vikyek](https://github.com/sponsors/Vikyek)
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
+
