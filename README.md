@@ -126,9 +126,6 @@ Press `Ctrl+C` to stop execution.
 
 <div align="center">
 
-<!-- Official GitHub Sponsors Button & Card (Rendered in web/HTML environments; GitHub markdown sanitizer strips iframes, falling back to native badges) -->
-<iframe src="https://github.com/sponsors/Vikyek/button" title="Sponsor Vikyek" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
-<iframe src="https://github.com/sponsors/Vikyek/card" title="Sponsor Vikyek" height="225" width="600" style="border: 0;"></iframe>
 
 [![Sponsor Vikyek](https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa?logo=github&style=for-the-badge)](https://github.com/sponsors/Vikyek)
 [![Donate on Liberapay](https://img.shields.io/badge/Donate-Liberapay-f6c915?style=for-the-badge&logo=liberapay&logoColor=black)](https://liberapay.com/Vikyek)
@@ -138,7 +135,7 @@ Press `Ctrl+C` to stop execution.
 </div>
 
 > ### 🎯 Active Sponsorship Goal: Monthly Living Essentials
-> **Target:** **2,710 PLN / ~$675 USD per month** (`630 PLN / week`) — Rent & Essential Utilities  
+> **Target:** **2,710 PLN / ~$680 USD per month** (`630 PLN / week`) — Rent & Essential Utilities  
 > Covering basic living essentials directly unlocks dedicated, sustainable full-time independent open-source engineering across desktop environment tooling and Linux system utilities free from corporate telemetry, ads, or paywalls.
 
 If `vlfstatus` powers your desktop status bar, consider supporting ongoing work:
