@@ -16,16 +16,16 @@ optdepends=(
 makedepends=('git')
 provides=("$_pkgname")
 conflicts=("$_pkgname")
-source=("git+https://github.com/Vikyek/vlfstatus.git")
+source=("${pkgname}::git+https://github.com/Vikyek/vlfstatus.git")
 sha256sums=('SKIP')
 
 pkgver() {
-  cd "$_pkgname"
+  cd "$pkgname"
   printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 package() {
-  cd "$_pkgname"
+  cd "$pkgname"
   install -Dm755 vlfstatus "$pkgdir/usr/bin/vlfstatus"
   install -Dm644 man1/vlfstatus.1 "$pkgdir/usr/share/man/man1/vlfstatus.1"
   install -Dm644 fetch_quota.py "$pkgdir/usr/share/vlfstatus/fetch_quota.py"

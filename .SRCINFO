@@ -14,7 +14,7 @@ pkgbase = vlfstatus-git
 	optdepends = agy-cli: For checking/displaying Google Cloud Code quota
 	provides = vlfstatus
 	conflicts = vlfstatus
-	source = git+https://github.com/Vikyek/vlfstatus.git
+	source = vlfstatus-git::git+https://github.com/Vikyek/vlfstatus.git
 	sha256sums = SKIP
 
 pkgname = vlfstatus-git

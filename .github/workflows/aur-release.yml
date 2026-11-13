@@ -17,7 +17,7 @@ jobs:
           pacman -Syu --noconfirm git sudo namcap diffutils pacman-contrib
 
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup non-root builder
         run: |
@@ -47,9 +47,30 @@ jobs:
         run: |
           namcap PKGBUILD
 
-      - name: Build Package
+      - name: Resolve Dependencies and Build Package
         run: |
-          sudo -u builder makepkg -s --noconfirm
+          # Install official makedepends
+          MAKEDEPS=$(sudo -u builder makepkg --printsrcinfo | awk '$1 == "makedepends" {print $3}' | tr '\n' ' ')
+          if [ -n "$MAKEDEPS" ]; then
+            pacman -S --noconfirm --needed $MAKEDEPS || true
+          fi
+
+          # Install official runtime depends that are available in official repos
+          ALL_DEPS=$(sudo -u builder makepkg --printsrcinfo | awk '$1 == "depends" {print $3}' | sed -E 's/[<>=].*//' | tr '\n' ' ')
+          if [ -n "$ALL_DEPS" ]; then
+            REPO_DEPS=""
+            for dep in $ALL_DEPS; do
+              if pacman -Si "$dep" >/dev/null 2>&1; then
+                REPO_DEPS="$REPO_DEPS $dep"
+              fi
+            done
+            if [ -n "$REPO_DEPS" ]; then
+              pacman -S --noconfirm --needed $REPO_DEPS || true
+            fi
+          fi
+
+          # Build package (fallback to -d if runtime deps are AUR-only)
+          sudo -u builder makepkg -s --noconfirm || sudo -u builder makepkg -d --noconfirm
 
       - name: Validate Built Package
         run: |
@@ -70,7 +91,7 @@ jobs:
       contents: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
