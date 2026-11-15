@@ -1,7 +1,7 @@
 # Maintainer: Vikyek <vika.jedr@gmail.com>
 pkgname=vlfstatus-git
 _pkgname=vlfstatus
-pkgver=r10.b4e5ba6
+pkgver=0.1.0
 pkgrel=1
 pkgdesc="Lightweight, feature-packed bash status bar generator for i3bar and swaybar with live AI agent quota tracking"
 arch=('any')
