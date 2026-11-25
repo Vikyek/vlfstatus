@@ -11,6 +11,37 @@ fi
 
 error() { echo -e "  ${C_ERROR}✖ ERROR:${C_RESET} $*" >&2; }
 
+usage() {
+	cat <<EOF
+Usage: ${0##*/} [OPTIONS]
+
+Lightweight status bar generator for i3bar and swaybar using the i3bar JSON
+protocol with Pango markup.
+
+Options:
+  -h, --help    Display this help message and exit
+
+Configuration:
+  ~/.config/vlfstatus/config    User overrides (COLOR_*, MULTI_ACCOUNT_MODE)
+  ~/.cache/bar_colors.sh        Dynamic theme color palette
+EOF
+}
+
+while [ $# -gt 0 ]; do
+	case "$1" in
+		-h|--help)
+			usage
+			exit 0
+			;;
+		*)
+			error "Unknown option: $1"
+			echo "Try '${0##*/} --help' for more information." >&2
+			exit 1
+			;;
+	esac
+	shift
+done
+
 # SECURITY: Prevent execution as root to avoid Local Privilege Escalation (LPE).
 if [ "$EUID" -eq 0 ]; then
     error "This script must not be run as root."
